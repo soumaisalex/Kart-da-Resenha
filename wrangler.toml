@@ -1,0 +1,18 @@
+name = "kart-da-resenha"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# Binding do bucket R2 onde ficam os arquivos originais (PDF/imagem) e fotos de perfil
+[[r2_buckets]]
+binding = "RESULTADOS_BUCKET"
+bucket_name = "kart-da-resenha-arquivos"
+
+# Binding do Workers AI (usado no OCR)
+[ai]
+binding = "AI"
+
+# Variáveis de ambiente (definir os valores reais no dashboard da Cloudflare Pages,
+# em Settings > Environment variables — nunca commitar aqui):
+# DATABASE_URL        -> connection string do Neon
+# JWT_SECRET           -> segredo para assinar sessão admin
+# R2_PUBLIC_BASE_URL    -> URL pública do bucket R2 (ou domínio customizado)
