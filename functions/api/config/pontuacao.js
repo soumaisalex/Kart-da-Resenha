@@ -1,4 +1,5 @@
 import { getDb } from '../../_lib/db.js';
+import { exigirAdmin } from '../../_lib/auth.js';
 
 // GET /api/config/pontuacao -> tabela de pontos por posição + pontos de volta mais rápida
 export async function onRequestGet(context) {
@@ -15,6 +16,9 @@ export async function onRequestGet(context) {
 // PUT /api/config/pontuacao -> atualizar pontuação (área admin)
 // body: { posicoes: [{ posicao, pontos }], pontos_melhor_volta }
 export async function onRequestPut(context) {
+  const negado = await exigirAdmin(context);
+  if (negado) return negado;
+
   const sql = getDb(context.env);
   const { posicoes, pontos_melhor_volta } = await context.request.json();
 

@@ -1,5 +1,6 @@
 import { getDb } from '../../_lib/db.js';
 import { calcularPontos } from '../../_lib/pontuacao.js';
+import { exigirAdmin } from '../../_lib/auth.js';
 
 // POST /api/resultados/importar
 // body (já revisado/corrigido pelo admin na tela de revisão):
@@ -16,6 +17,9 @@ import { calcularPontos } from '../../_lib/pontuacao.js';
 // - Se algum resultado não tiver piloto_id, fica com piloto_id = null (matching feito na tela de revisão,
 //   com fallback pra criar perfil novo/pendente ali mesmo).
 export async function onRequestPost(context) {
+  const negado = await exigirAdmin(context);
+  if (negado) return negado;
+
   const sql = getDb(context.env);
   const body = await context.request.json();
 

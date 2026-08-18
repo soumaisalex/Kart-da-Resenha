@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { CheckCircle2, RotateCcw } from 'lucide-react';
+import { CheckCircle2, RotateCcw, LogOut } from 'lucide-react';
 import UploadResultados from '../components/admin/UploadResultados.jsx';
 import RevisaoResultados from '../components/admin/RevisaoResultados.jsx';
 
 // TODO próxima etapa:
-// - Login admin (esta página ainda não está protegida por sessão)
 // - Fila de aprovação de perfis (pilotos com status = pendente)
 // - Configuração de pontuação (posição + volta mais rápida)
 // - Seção de eventos: criar futuro, ver confirmados, ver resultados de passados
@@ -13,9 +12,22 @@ export default function Admin() {
   const [dadosExtraidos, setDadosExtraidos] = useState(null);
   const [resultadoImport, setResultadoImport] = useState(null);
 
+  async function sair() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/';
+  }
+
   return (
     <main className="max-w-5xl mx-auto px-4 py-10">
-      <h1 className="font-display font-bold text-2xl text-checkered mb-1">Área Administrativa</h1>
+      <div className="flex items-start justify-between mb-1">
+        <h1 className="font-display font-bold text-2xl text-checkered">Área Administrativa</h1>
+        <button
+          onClick={sair}
+          className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered"
+        >
+          <LogOut className="w-4 h-4" /> Sair
+        </button>
+      </div>
       <p className="text-asfalto-600 mb-8">Importar resultados de uma corrida</p>
 
       {etapa === 'upload' && (

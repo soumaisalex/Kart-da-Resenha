@@ -1,3 +1,5 @@
+import { exigirAdmin } from '../../_lib/auth.js';
+
 // POST /api/ocr
 // body: multipart/form-data com o arquivo (imagem ou PDF) da tabela de resultados
 //
@@ -31,6 +33,9 @@ Se algum campo não existir na imagem, use null. Não invente dados.
 `;
 
 export async function onRequestPost(context) {
+  const negado = await exigirAdmin(context);
+  if (negado) return negado;
+
   const { env, request } = context;
 
   const formData = await request.formData();

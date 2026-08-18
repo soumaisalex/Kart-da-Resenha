@@ -1,8 +1,11 @@
 import { getDb } from '../../_lib/db.js';
+import { exigirAdmin } from '../../_lib/auth.js';
 
 // GET /api/pilotos/pendentes -> fila de aprovação (área admin)
-// TODO: proteger com sessão de admin (ver functions/api/auth/login.js)
 export async function onRequestGet(context) {
+  const negado = await exigirAdmin(context);
+  if (negado) return negado;
+
   const sql = getDb(context.env);
   const pendentes = await sql`
     SELECT id, nome, telefone, email, instagram, foto_url, criado_em
@@ -16,6 +19,9 @@ export async function onRequestGet(context) {
 // POST /api/pilotos/pendentes -> aprovar ou rejeitar
 // body: { id, acao: 'aprovar' | 'rejeitar' }
 export async function onRequestPost(context) {
+  const negado = await exigirAdmin(context);
+  if (negado) return negado;
+
   const sql = getDb(context.env);
   const { id, acao } = await context.request.json();
 

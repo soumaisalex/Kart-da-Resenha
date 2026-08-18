@@ -1,4 +1,5 @@
 import { getDb } from '../../_lib/db.js';
+import { exigirAdmin } from '../../_lib/auth.js';
 
 // GET /api/eventos -> agenda completa (passados + futuros), usada na Home e na Admin
 export async function onRequestGet(context) {
@@ -14,6 +15,9 @@ export async function onRequestGet(context) {
 // POST /api/eventos -> criar evento futuro (área admin)
 // body: { nome, data_evento, local }
 export async function onRequestPost(context) {
+  const negado = await exigirAdmin(context);
+  if (negado) return negado;
+
   const sql = getDb(context.env);
   const body = await context.request.json();
 
