@@ -34,15 +34,24 @@ Se algum campo não existir na imagem, use null. Não invente dados.
 `;
 
 // Extrai o JSON mesmo que o modelo tenha escrito algum texto antes/depois dele
-// (ex: "Aqui está o resultado: {...}") — mais tolerante do que só tirar as crases de código.
+// (ex: "Aqui está o resultado: {...}") e tolera pequenas imperfeições comuns em
+// saída de LLM: aspas tipográficas (“ ”) em vez de retas, e vírgulas soltas antes de } ou ].
 function extrairJson(texto) {
-  const semCrases = texto.replace(/```json|```/g, '').trim();
-  const inicio = semCrases.indexOf('{');
-  const fim = semCrases.lastIndexOf('}');
+  let corpo = texto.replace(/```json|```/g, '').trim();
+
+  const inicio = corpo.indexOf('{');
+  const fim = corpo.lastIndexOf('}');
   if (inicio === -1 || fim === -1 || fim < inicio) {
     throw new Error('Resposta não contém um objeto JSON');
   }
-  return JSON.parse(semCrases.slice(inicio, fim + 1));
+  corpo = corpo.slice(inicio, fim + 1);
+
+  corpo = corpo
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/,(\s*[}\]])/g, '$1');
+
+  return JSON.parse(corpo);
 }
 
 export async function onRequestPost(context) {
@@ -105,10 +114,11 @@ export async function onRequestPost(context) {
     let dadosExtraidos;
     try {
       dadosExtraidos = extrairJson(resultadoIA.response);
-    } catch {
+    } catch (erroParse) {
       return Response.json(
         {
           erro: 'A IA não devolveu um JSON válido. Tente novamente com uma imagem mais nítida.',
+          detalhe_parse: erroParse?.message,
           bruto: resultadoIA.response
         },
         { status: 422 }

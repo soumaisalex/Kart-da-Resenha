@@ -22,7 +22,8 @@ export default function UploadResultados({ onExtraido }) {
       if (!resp.ok) {
         const partes = [dados.erro || 'Não foi possível ler o arquivo'];
         if (dados.detalhe) partes.push(`detalhe: ${dados.detalhe}`);
-        if (dados.bruto) partes.push(`resposta da IA: ${dados.bruto.slice(0, 400)}`);
+        if (dados.detalhe_parse) partes.push(`erro do parser: ${dados.detalhe_parse}`);
+        if (dados.bruto) partes.push(`resposta da IA (completa): ${dados.bruto}`);
         throw new Error(partes.join(' — '));
       }
 
@@ -74,7 +75,7 @@ export default function UploadResultados({ onExtraido }) {
       </div>
 
       {erro && (
-        <p className="mt-3 text-sm text-racing-light">
+        <p className="mt-3 text-sm text-racing-light max-h-48 overflow-y-auto whitespace-pre-wrap">
           Não deu certo: {erro}
         </p>
       )}
