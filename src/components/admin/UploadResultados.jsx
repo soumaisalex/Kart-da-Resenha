@@ -20,7 +20,10 @@ export default function UploadResultados({ onExtraido }) {
       const dados = await resp.json();
 
       if (!resp.ok) {
-        throw new Error(dados.detalhe ? `${dados.erro} — detalhe: ${dados.detalhe}` : (dados.erro || 'Não foi possível ler o arquivo'));
+        const partes = [dados.erro || 'Não foi possível ler o arquivo'];
+        if (dados.detalhe) partes.push(`detalhe: ${dados.detalhe}`);
+        if (dados.bruto) partes.push(`resposta da IA: ${dados.bruto.slice(0, 400)}`);
+        throw new Error(partes.join(' — '));
       }
 
       onExtraido(dados);

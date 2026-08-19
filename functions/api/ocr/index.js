@@ -33,6 +33,18 @@ Extraia para JSON estrito, sem texto fora do JSON, no seguinte formato:
 Se algum campo não existir na imagem, use null. Não invente dados.
 `;
 
+// Extrai o JSON mesmo que o modelo tenha escrito algum texto antes/depois dele
+// (ex: "Aqui está o resultado: {...}") — mais tolerante do que só tirar as crases de código.
+function extrairJson(texto) {
+  const semCrases = texto.replace(/```json|```/g, '').trim();
+  const inicio = semCrases.indexOf('{');
+  const fim = semCrases.lastIndexOf('}');
+  if (inicio === -1 || fim === -1 || fim < inicio) {
+    throw new Error('Resposta não contém um objeto JSON');
+  }
+  return JSON.parse(semCrases.slice(inicio, fim + 1));
+}
+
 export async function onRequestPost(context) {
   const negado = await exigirAdmin(context);
   if (negado) return negado;
@@ -86,16 +98,19 @@ export async function onRequestPost(context) {
     const bytes = new Uint8Array(await arquivo.arrayBuffer());
     const resultadoIA = await env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
       prompt: PROMPT_EXTRACAO,
-      image: Array.from(bytes)
+      image: Array.from(bytes),
+      max_tokens: 4096
     });
 
     let dadosExtraidos;
     try {
-      const textoLimpo = resultadoIA.response.replace(/```json|```/g, '').trim();
-      dadosExtraidos = JSON.parse(textoLimpo);
+      dadosExtraidos = extrairJson(resultadoIA.response);
     } catch {
       return Response.json(
-        { erro: 'A IA não devolveu um JSON válido. Tente novamente com uma imagem mais nítida.', bruto: resultadoIA.response },
+        {
+          erro: 'A IA não devolveu um JSON válido. Tente novamente com uma imagem mais nítida.',
+          bruto: resultadoIA.response
+        },
         { status: 422 }
       );
     }
