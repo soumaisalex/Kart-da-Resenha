@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { CheckCircle2, RotateCcw, LogOut } from 'lucide-react';
-import UploadResultados from '../components/admin/UploadResultados.jsx';
-import RevisaoResultados from '../components/admin/RevisaoResultados.jsx';
+import { LogOut, UploadCloud, UserCheck } from 'lucide-react';
+import ImportarResultados from './admin/ImportarResultados.jsx';
+import AprovacaoPerfis from './admin/AprovacaoPerfis.jsx';
 
 // TODO próxima etapa:
-// - Fila de aprovação de perfis (pilotos com status = pendente)
 // - Configuração de pontuação (posição + volta mais rápida)
 // - Seção de eventos: criar futuro, ver confirmados, ver resultados de passados
+const ABAS = [
+  { id: 'importar', label: 'Importar resultados', icone: UploadCloud, Componente: ImportarResultados },
+  { id: 'perfis', label: 'Aprovação de perfis', icone: UserCheck, Componente: AprovacaoPerfis }
+];
+
 export default function Admin() {
-  const [etapa, setEtapa] = useState('upload'); // upload | revisao | concluido
-  const [dadosExtraidos, setDadosExtraidos] = useState(null);
-  const [resultadoImport, setResultadoImport] = useState(null);
+  const [abaAtiva, setAbaAtiva] = useState('importar');
+  const AbaAtual = ABAS.find((a) => a.id === abaAtiva)?.Componente;
 
   async function sair() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -19,7 +22,7 @@ export default function Admin() {
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-10">
-      <div className="flex items-start justify-between mb-1">
+      <div className="flex items-start justify-between mb-6">
         <h1 className="font-display font-bold text-2xl text-checkered">Área Administrativa</h1>
         <button
           onClick={sair}
@@ -28,49 +31,26 @@ export default function Admin() {
           <LogOut className="w-4 h-4" /> Sair
         </button>
       </div>
-      <p className="text-asfalto-600 mb-8">Importar resultados de uma corrida</p>
 
-      {etapa === 'upload' && (
-        <UploadResultados
-          onExtraido={(dados) => {
-            setDadosExtraidos(dados);
-            setEtapa('revisao');
-          }}
-        />
-      )}
-
-      {etapa === 'revisao' && dadosExtraidos && (
-        <RevisaoResultados
-          dadosExtraidos={dadosExtraidos}
-          onImportado={(resultado) => {
-            setResultadoImport(resultado);
-            setEtapa('concluido');
-          }}
-          onCancelar={() => {
-            setDadosExtraidos(null);
-            setEtapa('upload');
-          }}
-        />
-      )}
-
-      {etapa === 'concluido' && (
-        <div className="flex flex-col items-center gap-4 py-10 text-center">
-          <CheckCircle2 className="w-12 h-12 text-racing" />
-          <div>
-            <p className="font-display font-semibold text-lg text-checkered">Resultados importados!</p>
-            <p className="text-asfalto-600 text-sm mt-1">
-              {resultadoImport?.resultados?.length} resultado(s) gravado(s) e pontuação calculada.
-            </p>
-          </div>
+      <nav className="flex gap-1 border-b border-asfalto-700 mb-8">
+        {ABAS.map(({ id, label, icone: Icone }) => (
           <button
-            onClick={() => { setEtapa('upload'); setDadosExtraidos(null); setResultadoImport(null); }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-asfalto-600
-                       text-checkered hover:bg-asfalto-800"
+            key={id}
+            onClick={() => setAbaAtiva(id)}
+            className={`
+              flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors
+              ${abaAtiva === id
+                ? 'border-racing text-checkered'
+                : 'border-transparent text-asfalto-600 hover:text-checkered'}
+            `}
           >
-            <RotateCcw className="w-4 h-4" /> Importar outra corrida
+            <Icone className="w-4 h-4" />
+            {label}
           </button>
-        </div>
-      )}
+        ))}
+      </nav>
+
+      {AbaAtual && <AbaAtual />}
     </main>
   );
 }
