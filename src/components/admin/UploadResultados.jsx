@@ -72,7 +72,7 @@ export default function UploadResultados({ onExtraido }) {
 
       {erro && (
         <p className="mt-3 text-sm text-racing-light">
-          Não deu certo: {erro}. Tente novamente com uma foto mais nítida ou o PDF original.
+          Não deu certo: {erro}
         </p>
       )}
     </div>
