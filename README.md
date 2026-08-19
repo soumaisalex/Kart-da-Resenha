@@ -41,10 +41,9 @@ wrangler.toml           # bindings de R2 e Workers AI
 
 ## Pendências conhecidas (marcadas com TODO no código)
 
-- Hash de senha do admin (PBKDF2 via Web Crypto, mesmo padrão do xContas)
-- Matching fuzzy nome OCR → perfil existente na tela de revisão do admin
-- Views/queries de ranking por temporada e por evento (hoje só existe `vw_ranking_geral`)
-- Upload de foto de perfil (endpoint dedicado pro R2)
+- Upload de foto de perfil (endpoint dedicado pro R2) — hoje é por URL manual
+- Matching fuzzy nome OCR → perfil existente é client-side, por similaridade simples
+- OCR só processa imagens (JPG/PNG) — PDF não é suportado pelo modelo de visão do Workers AI
 
 ## Próximas etapas sugeridas
 

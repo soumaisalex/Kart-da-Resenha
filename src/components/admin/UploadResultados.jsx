@@ -50,7 +50,7 @@ export default function UploadResultados({ onExtraido }) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/*,.pdf"
+          accept="image/*"
           className="hidden"
           onChange={(e) => enviarArquivo(e.target.files?.[0])}
         />
@@ -64,8 +64,8 @@ export default function UploadResultados({ onExtraido }) {
         ) : (
           <div className="flex flex-col items-center gap-3 text-checkered">
             <UploadCloud className="w-8 h-8 text-racing" />
-            <p className="font-display font-medium">Envie a foto ou PDF da tabela de resultados</p>
-            <p className="text-sm text-asfalto-600">Clique aqui ou arraste o arquivo</p>
+            <p className="font-display font-medium">Envie a foto da tabela de resultados</p>
+            <p className="text-sm text-asfalto-600">Clique aqui ou arraste o arquivo — JPG ou PNG (PDF ainda não é suportado)</p>
           </div>
         )}
       </div>
