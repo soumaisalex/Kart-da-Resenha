@@ -7,7 +7,7 @@ export async function onRequestGet(context) {
   const { id } = context.params;
 
   const [piloto] = await sql`
-    SELECT id, nome, foto_url, instagram, status
+    SELECT id, nome, foto_url, instagram, status, (data_nascimento IS NOT NULL) AS tem_data_nascimento
     FROM pilotos WHERE id = ${id}
   `;
   if (!piloto) return Response.json({ erro: 'Piloto não encontrado' }, { status: 404 });

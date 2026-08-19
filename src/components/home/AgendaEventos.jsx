@@ -1,4 +1,5 @@
 import { CalendarClock, Flag, Download } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 function formatarData(data) {
   return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR', {
@@ -52,9 +53,12 @@ export default function AgendaEventos({ ultimoPassado, proximoFuturo }) {
             </p>
           </div>
           {/* Confirmação de presença chega na próxima etapa (seção de eventos futuros) */}
-          <span className="text-xs text-asfalto-600 border border-asfalto-600 rounded-full px-2.5 py-1 shrink-0">
-            Confirmação em breve
-          </span>
+          <Link
+            to={`/eventos/${proximoFuturo.id}`}
+            className="text-sm font-medium text-checkered bg-racing hover:bg-racing-dark px-3 py-1.5 rounded-lg shrink-0"
+          >
+            Confirmar presença
+          </Link>
         </div>
       )}
     </div>

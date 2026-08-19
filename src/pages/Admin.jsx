@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { LogOut, UploadCloud, UserCheck } from 'lucide-react';
+import { LogOut, UploadCloud, UserCheck, CalendarClock } from 'lucide-react';
 import ImportarResultados from './admin/ImportarResultados.jsx';
 import AprovacaoPerfis from './admin/AprovacaoPerfis.jsx';
+import GestaoEventos from './admin/GestaoEventos.jsx';
 
 // TODO próxima etapa:
 // - Configuração de pontuação (posição + volta mais rápida)
-// - Seção de eventos: criar futuro, ver confirmados, ver resultados de passados
 const ABAS = [
   { id: 'importar', label: 'Importar resultados', icone: UploadCloud, Componente: ImportarResultados },
-  { id: 'perfis', label: 'Aprovação de perfis', icone: UserCheck, Componente: AprovacaoPerfis }
+  { id: 'perfis', label: 'Aprovação de perfis', icone: UserCheck, Componente: AprovacaoPerfis },
+  { id: 'eventos', label: 'Eventos', icone: CalendarClock, Componente: GestaoEventos }
 ];
 
 export default function Admin() {
