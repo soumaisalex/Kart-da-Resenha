@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import { LogOut, UploadCloud, UserCheck, CalendarClock } from 'lucide-react';
+import { LogOut, UploadCloud, UserCheck, CalendarClock, Trophy } from 'lucide-react';
 import ImportarResultados from './admin/ImportarResultados.jsx';
 import AprovacaoPerfis from './admin/AprovacaoPerfis.jsx';
 import GestaoEventos from './admin/GestaoEventos.jsx';
+import ConfiguracaoPontuacao from './admin/ConfiguracaoPontuacao.jsx';
 
-// TODO próxima etapa:
-// - Configuração de pontuação (posição + volta mais rápida)
 const ABAS = [
   { id: 'importar', label: 'Importar resultados', icone: UploadCloud, Componente: ImportarResultados },
   { id: 'perfis', label: 'Aprovação de perfis', icone: UserCheck, Componente: AprovacaoPerfis },
-  { id: 'eventos', label: 'Eventos', icone: CalendarClock, Componente: GestaoEventos }
+  { id: 'eventos', label: 'Eventos', icone: CalendarClock, Componente: GestaoEventos },
+  { id: 'pontuacao', label: 'Pontuação', icone: Trophy, Componente: ConfiguracaoPontuacao }
 ];
 
 export default function Admin() {
@@ -33,13 +33,13 @@ export default function Admin() {
         </button>
       </div>
 
-      <nav className="flex gap-1 border-b border-asfalto-700 mb-8">
+      <nav className="flex gap-1 border-b border-asfalto-700 mb-8 overflow-x-auto">
         {ABAS.map(({ id, label, icone: Icone }) => (
           <button
             key={id}
             onClick={() => setAbaAtiva(id)}
             className={`
-              flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors
+              flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0
               ${abaAtiva === id
                 ? 'border-racing text-checkered'
                 : 'border-transparent text-asfalto-600 hover:text-checkered'}
