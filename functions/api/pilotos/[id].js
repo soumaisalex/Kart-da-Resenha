@@ -1,6 +1,7 @@
 import { getDb } from '../../_lib/db.js';
+import { obterEstatisticasPiloto } from '../../_lib/pilotoStats.js';
 
-// GET /api/pilotos/:id -> dados + estatísticas do piloto (perfil público)
+// GET /api/pilotos/:id -> dados + estatísticas completas do piloto (perfil público)
 export async function onRequestGet(context) {
   const sql = getDb(context.env);
   const { id } = context.params;
@@ -11,17 +12,9 @@ export async function onRequestGet(context) {
   `;
   if (!piloto) return Response.json({ erro: 'Piloto não encontrado' }, { status: 404 });
 
-  const [stats] = await sql`
-    SELECT
-      COUNT(DISTINCT r.bateria_id) AS total_corridas,
-      MIN(r.melhor_volta_ms) AS melhor_volta_ms,
-      COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos_totais
-    FROM resultados r WHERE r.piloto_id = ${id}
-  `;
+  const estatisticas = await obterEstatisticasPiloto(sql, id);
 
-  // TODO: evolução (histórico de posição por evento) e posição nos rankings geral/temporada/evento
-
-  return Response.json({ ...piloto, stats });
+  return Response.json({ ...piloto, ...estatisticas });
 }
 
 // PATCH /api/pilotos/:id -> editar dados do perfil

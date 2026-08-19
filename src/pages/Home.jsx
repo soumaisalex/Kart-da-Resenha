@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Loader2, Flag } from 'lucide-react';
 import Podio from '../components/home/Podio.jsx';
 import DestaqueVoltaRapida from '../components/home/DestaqueVoltaRapida.jsx';
@@ -83,6 +84,12 @@ export default function Home() {
           <ListaEventos eventos={eventos} />
         </section>
       )}
+
+      <footer className="text-center pt-4">
+        <Link to="/reivindicar" className="text-sm text-asfalto-600 hover:text-racing">
+          Correu com a gente e não tem perfil? Reivindicar meu perfil
+        </Link>
+      </footer>
     </main>
   );
 }

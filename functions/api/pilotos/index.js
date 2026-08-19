@@ -30,7 +30,14 @@ export async function onRequestPost(context) {
     RETURNING id, nome, status
   `;
 
-  // TODO: se vier resultado_id_para_vincular, atualizar resultados.piloto_id = piloto.id
+  // Vincula automaticamente resultados já importados sob o mesmo nome (ainda sem perfil vinculado).
+  // Match exato ignorando maiúsculas/minúsculas — se o nome tiver diferenças de acento/grafia,
+  // o admin ainda pode vincular manualmente na tela de revisão de uma futura importação.
+  await sql`
+    UPDATE resultados
+    SET piloto_id = ${piloto.id}
+    WHERE piloto_id IS NULL AND nome_bruto ILIKE ${body.nome.trim()}
+  `;
 
   return Response.json(piloto, { status: 201 });
 }

@@ -1,16 +1,166 @@
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Loader2, User, Instagram, Share2, Pencil, ArrowLeft, Clock } from 'lucide-react';
+import { msParaTempo } from '../lib/tempo.js';
+import Evolucao from '../components/perfil/Evolucao.jsx';
+import EditarPerfilModal from '../components/perfil/EditarPerfilModal.jsx';
+import CartaoCompartilhar from '../components/perfil/CartaoCompartilhar.jsx';
 
 export default function PerfilPiloto() {
   const { id } = useParams();
+  const [piloto, setPiloto] = useState(null);
+  const [erro, setErro] = useState(null);
+  const [modalEdicao, setModalEdicao] = useState(false);
+  const [modalCompartilhar, setModalCompartilhar] = useState(false);
 
-  // TODO próxima etapa:
-  // - Dados + estatísticas (melhor volta, nº corridas, evolução)
-  // - Ranking geral/temporada/evento com o piloto destacado
-  // - Botão "Reivindicar perfil" (se ainda não reivindicado)
-  // - Modal com card de compartilhamento estilo Stories (html-to-image + Web Share API)
+  useEffect(() => {
+    carregar();
+  }, [id]);
+
+  async function carregar() {
+    setErro(null);
+    setPiloto(null);
+    try {
+      const resp = await fetch(`/api/pilotos/${id}`);
+      if (!resp.ok) throw new Error('Piloto não encontrado');
+      setPiloto(await resp.json());
+    } catch (e) {
+      setErro(e.message);
+    }
+  }
+
+  if (erro) {
+    return (
+      <main className="max-w-md mx-auto px-4 py-16 text-center">
+        <p className="text-checkered">{erro}</p>
+        <Link to="/" className="text-racing hover:text-racing-light text-sm mt-3 inline-block">
+          Voltar pra Home
+        </Link>
+      </main>
+    );
+  }
+
+  if (!piloto) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-racing" />
+      </div>
+    );
+  }
+
   return (
-    <main className="max-w-3xl mx-auto px-4 py-10">
-      <p className="text-checkered">Perfil do piloto #{id} — em construção.</p>
+    <main className="max-w-xl mx-auto px-4 py-10 space-y-8">
+      <Link to="/" className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered w-fit">
+        <ArrowLeft className="w-4 h-4" /> Voltar
+      </Link>
+
+      {piloto.status !== 'aprovado' && (
+        <div className="bg-asfalto-800 border border-asfalto-700 rounded-lg px-4 py-2.5 text-sm text-asfalto-600 flex items-center gap-2">
+          <Clock className="w-4 h-4 shrink-0" />
+          {piloto.status === 'pendente'
+            ? 'Perfil aguardando aprovação — só você consegue ver essa página por enquanto.'
+            : 'Este perfil não foi aprovado.'}
+        </div>
+      )}
+
+      {/* Cabeçalho */}
+      <div className="flex flex-col items-center text-center gap-3">
+        {piloto.foto_url ? (
+          <img src={piloto.foto_url} alt={piloto.nome} className="w-24 h-24 rounded-full object-cover border-4 border-racing" />
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-asfalto-800 border-4 border-racing flex items-center justify-center">
+            <User className="w-10 h-10 text-asfalto-600" />
+          </div>
+        )}
+        <h1 className="font-display font-bold text-2xl text-checkered">{piloto.nome}</h1>
+        {piloto.instagram && (
+          <span className="flex items-center gap-1 text-sm text-asfalto-600">
+            <Instagram className="w-4 h-4" /> {piloto.instagram}
+          </span>
+        )}
+
+        <div className="flex gap-2 mt-1">
+          <button
+            onClick={() => setModalCompartilhar(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-racing hover:bg-racing-dark text-checkered text-sm font-medium"
+          >
+            <Share2 className="w-4 h-4" /> Compartilhar
+          </button>
+          <button
+            onClick={() => setModalEdicao(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-asfalto-600 text-checkered text-sm hover:bg-asfalto-800"
+          >
+            <Pencil className="w-4 h-4" /> Editar
+          </button>
+        </div>
+      </div>
+
+      {/* Estatísticas */}
+      <div className="grid grid-cols-3 gap-3">
+        <Estatistica valor={piloto.stats?.total_corridas ?? 0} label="corridas" />
+        <Estatistica valor={Number(piloto.stats?.pontos_totais ?? 0)} label="pontos" />
+        <Estatistica
+          valor={piloto.stats?.melhor_volta_ms ? msParaTempo(piloto.stats.melhor_volta_ms) : '--'}
+          label="melhor volta"
+        />
+      </div>
+
+      {/* Rankings */}
+      <div className="space-y-2">
+        <h2 className="font-display font-semibold text-checkered">Rankings</h2>
+        <RankingLinha titulo="Geral" ranking={piloto.ranking_geral} />
+        <RankingLinha titulo="Temporada atual" ranking={piloto.ranking_temporada} />
+        {piloto.ultimo_evento && (
+          <RankingLinha
+            titulo={`Última corrida: ${piloto.ultimo_evento.nome || ''}`}
+            ranking={{ posicao: piloto.ultimo_evento.posicao, total_pilotos: piloto.ultimo_evento.total_pilotos }}
+          />
+        )}
+      </div>
+
+      {/* Evolução */}
+      {piloto.historico?.length > 0 && (
+        <div>
+          <h2 className="font-display font-semibold text-checkered mb-2">Evolução</h2>
+          <Evolucao historico={piloto.historico} />
+        </div>
+      )}
+
+      {modalEdicao && (
+        <EditarPerfilModal
+          piloto={piloto}
+          onFechar={() => setModalEdicao(false)}
+          onSalvo={(atualizado) => {
+            setPiloto((p) => ({ ...p, ...atualizado }));
+            setModalEdicao(false);
+          }}
+        />
+      )}
+
+      {modalCompartilhar && (
+        <CartaoCompartilhar piloto={piloto} onFechar={() => setModalCompartilhar(false)} />
+      )}
     </main>
+  );
+}
+
+function Estatistica({ valor, label }) {
+  return (
+    <div className="bg-asfalto-900 border border-asfalto-700 rounded-lg py-3 text-center">
+      <p className="font-display font-bold text-checkered text-lg">{valor}</p>
+      <p className="text-[11px] uppercase tracking-wide text-asfalto-600">{label}</p>
+    </div>
+  );
+}
+
+function RankingLinha({ titulo, ranking }) {
+  if (!ranking?.posicao) return null;
+  return (
+    <div className="flex items-center justify-between bg-asfalto-900 border border-asfalto-700 rounded-lg px-4 py-2.5">
+      <span className="text-sm text-checkered truncate">{titulo}</span>
+      <span className="font-display font-semibold text-racing shrink-0 ml-3">
+        {ranking.posicao}º <span className="text-asfalto-600 font-normal">de {ranking.total_pilotos}</span>
+      </span>
+    </div>
   );
 }
