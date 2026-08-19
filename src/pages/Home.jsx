@@ -1,16 +1,88 @@
+import { useEffect, useState } from 'react';
+import { Loader2, Flag } from 'lucide-react';
+import Podio from '../components/home/Podio.jsx';
+import DestaqueVoltaRapida from '../components/home/DestaqueVoltaRapida.jsx';
+import ListaRanking from '../components/home/ListaRanking.jsx';
+import AgendaEventos from '../components/home/AgendaEventos.jsx';
+import ListaEventos from '../components/home/ListaEventos.jsx';
+
 export default function Home() {
-  // TODO próxima etapa:
-  // - Pódio top 3 (destaque estilo pódio de corrida)
-  // - Card "volta mais rápida da última corrida"
-  // - Lista dos demais colocados (ranking geral)
-  // - Agenda de eventos: card do evento passado mais recente (acima) + próximo evento futuro (abaixo)
-  // - Lista de eventos com botão de download do arquivo original de cada um
+  const [ranking, setRanking] = useState(null);
+  const [destaque, setDestaque] = useState(null);
+  const [eventos, setEventos] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/ranking').then((r) => r.json()).then(setRanking).catch(() => setRanking([]));
+    fetch('/api/eventos/ultima-corrida')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setDestaque)
+      .catch(() => setDestaque(null));
+    fetch('/api/eventos').then((r) => r.json()).then(setEventos).catch(() => setEventos([]));
+  }, []);
+
+  const carregando = ranking === null || eventos === null;
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-racing" />
+      </div>
+    );
+  }
+
+  const top3 = ranking.slice(0, 3);
+  const resto = ranking.slice(3);
+  const passados = eventos.filter((e) => e.tipo === 'passado'); // já vem ordenado por data desc da API
+  const futuros = [...eventos.filter((e) => e.tipo === 'futuro')]
+    .sort((a, b) => new Date(a.data_evento) - new Date(b.data_evento));
+  const ultimoPassado = passados[0] || null;
+  const proximoFuturo = futuros[0] || null;
+
   return (
-    <main className="max-w-5xl mx-auto px-4 py-10">
-      <h1 className="font-display font-bold text-4xl text-checkered">
-        Kart da Resenha
-      </h1>
-      <p className="text-asfalto-600 mt-2">Estrutura base — próxima etapa monta o layout completo.</p>
+    <main className="max-w-3xl mx-auto px-4 py-10 space-y-12">
+      <header className="flex items-center gap-2 justify-center">
+        <Flag className="w-6 h-6 text-racing" />
+        <h1 className="font-display font-bold text-2xl sm:text-3xl text-checkered tracking-wide">
+          Kart da Resenha
+        </h1>
+      </header>
+
+      {top3.length > 0 ? (
+        <section>
+          <Podio top3={top3} />
+        </section>
+      ) : (
+        <p className="text-center text-asfalto-600">
+          Ainda não há corridas suficientes pra formar o ranking.
+        </p>
+      )}
+
+      {destaque && (
+        <section>
+          <DestaqueVoltaRapida destaque={destaque} />
+        </section>
+      )}
+
+      {resto.length > 0 && (
+        <section>
+          <h2 className="font-display font-semibold text-checkered mb-3">Classificação geral</h2>
+          <ListaRanking pilotos={resto} />
+        </section>
+      )}
+
+      {(ultimoPassado || proximoFuturo) && (
+        <section>
+          <h2 className="font-display font-semibold text-checkered mb-3">Agenda</h2>
+          <AgendaEventos ultimoPassado={ultimoPassado} proximoFuturo={proximoFuturo} />
+        </section>
+      )}
+
+      {eventos.length > 0 && (
+        <section>
+          <h2 className="font-display font-semibold text-checkered mb-3">Todos os eventos</h2>
+          <ListaEventos eventos={eventos} />
+        </section>
+      )}
     </main>
   );
 }
