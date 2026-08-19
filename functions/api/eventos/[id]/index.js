@@ -1,4 +1,4 @@
-import { getDb } from '../../_lib/db.js';
+import { getDb } from '../../../_lib/db.js';
 
 // GET /api/eventos/:id -> detalhe do evento + lista de pilotos confirmados
 export async function onRequestGet(context) {
