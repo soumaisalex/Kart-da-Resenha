@@ -13,6 +13,7 @@ CREATE TABLE pilotos (
   foto_url        TEXT,
   data_nascimento DATE,                     -- preenchida na 1ª confirmação de presença
   status          VARCHAR(20) NOT NULL DEFAULT 'pendente', -- pendente | aprovado | rejeitado
+  oculto          BOOLEAN NOT NULL DEFAULT false,          -- true = removido do ranking/pontuação sem apagar histórico
   reivindicado_em TIMESTAMPTZ,
   aprovado_em     TIMESTAMPTZ,
   criado_em       TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -129,6 +130,6 @@ SELECT
   MIN(r.melhor_volta_ms) AS melhor_volta_ms_historico
 FROM pilotos p
 LEFT JOIN resultados r ON r.piloto_id = p.id
-WHERE p.status = 'aprovado'
+WHERE p.status = 'aprovado' AND p.oculto = false
 GROUP BY p.id, p.nome, p.foto_url
 ORDER BY pontos_totais DESC;

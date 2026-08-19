@@ -1,8 +1,6 @@
-const COR_POSICAO = { 1: 'bg-ouro text-asfalto-950', 2: 'bg-prata text-asfalto-950', 3: 'bg-bronze text-asfalto-950' };
+import { formatarDataCurta } from '../../lib/data.js';
 
-function formatarDataCurta(data) {
-  return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-}
+const COR_POSICAO = { 1: 'bg-ouro text-asfalto-950', 2: 'bg-prata text-asfalto-950', 3: 'bg-bronze text-asfalto-950' };
 
 export default function Evolucao({ historico }) {
   if (!historico?.length) return null;

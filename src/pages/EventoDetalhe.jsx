@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2, CalendarClock, MapPin, ArrowLeft, CheckCircle2, User, AlertTriangle } from 'lucide-react';
-
-function formatarData(data) {
-  return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  });
-}
+import { formatarData } from '../lib/data.js';
 
 export default function EventoDetalhe() {
   const { id } = useParams();

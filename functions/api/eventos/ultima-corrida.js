@@ -20,7 +20,7 @@ export async function onRequestGet(context) {
     JOIN baterias b ON b.evento_id = ue.id
     JOIN resultados r ON r.bateria_id = b.id
     LEFT JOIN pilotos p ON p.id = r.piloto_id
-    WHERE r.melhor_volta_ms IS NOT NULL
+    WHERE r.melhor_volta_ms IS NOT NULL AND (p.id IS NULL OR p.oculto = false)
     ORDER BY r.melhor_volta_ms ASC
     LIMIT 1
   `;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, AlertTriangle, Loader2, User } from 'lucide-react';
+import { Check, AlertTriangle, Loader2, User, Trash2, Plus } from 'lucide-react';
 import { tempoParaMs } from '../../lib/tempo.js';
 import { sugerirPiloto } from '../../lib/pilotoMatching.js';
 
@@ -53,6 +53,29 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
 
   function atualizarLinha(index, campo, valor) {
     setLinhas((atual) => atual.map((l, i) => (i === index ? { ...l, [campo]: valor } : l)));
+  }
+
+  function adicionarLinha() {
+    const proximaPosicao = linhas.length ? Math.max(...linhas.map((l) => Number(l.posicao) || 0)) + 1 : 1;
+    setLinhas((atual) => [
+      ...atual,
+      {
+        nome_bruto: '',
+        posicao: proximaPosicao,
+        numero_kart: '',
+        melhor_volta: '',
+        tempo_total: '',
+        gap_texto: '',
+        total_voltas: '',
+        vel_media: '',
+        piloto_id: null,
+        sugestao: null
+      }
+    ]);
+  }
+
+  function removerLinha(index) {
+    setLinhas((atual) => atual.filter((_, i) => i !== index));
   }
 
   async function confirmarImportacao() {
@@ -131,6 +154,7 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
               <Th>Gap</Th>
               <Th>Voltas</Th>
               <Th>Vel. média</Th>
+              <Th></Th>
             </tr>
           </thead>
           <tbody>
@@ -152,11 +176,27 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
                 <Td><InputCel valor={linha.gap_texto} onChange={(v) => atualizarLinha(i, 'gap_texto', v)} largura="w-20" /></Td>
                 <Td><InputCel valor={linha.total_voltas} onChange={(v) => atualizarLinha(i, 'total_voltas', v)} largura="w-14" /></Td>
                 <Td><InputCel valor={linha.vel_media} onChange={(v) => atualizarLinha(i, 'vel_media', v)} largura="w-16" /></Td>
+                <Td>
+                  <button
+                    onClick={() => removerLinha(i)}
+                    className="text-asfalto-600 hover:text-racing-light"
+                    aria-label="Remover linha"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </Td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <button
+        onClick={adicionarLinha}
+        className="flex items-center gap-1.5 text-sm text-racing hover:text-racing-light"
+      >
+        <Plus className="w-4 h-4" /> Adicionar piloto
+      </button>
 
       {erro && (
         <p className="flex items-center gap-2 text-racing-light text-sm">

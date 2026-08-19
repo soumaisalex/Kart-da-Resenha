@@ -6,7 +6,7 @@ export async function onRequestGet(context) {
   const pilotos = await sql`
     SELECT id, nome, foto_url, instagram
     FROM pilotos
-    WHERE status = 'aprovado'
+    WHERE status = 'aprovado' AND oculto = false
     ORDER BY nome
   `;
   return Response.json(pilotos);

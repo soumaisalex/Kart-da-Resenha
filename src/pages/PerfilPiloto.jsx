@@ -63,6 +63,13 @@ export default function PerfilPiloto() {
         </div>
       )}
 
+      {piloto.oculto && (
+        <div className="bg-asfalto-800 border border-asfalto-700 rounded-lg px-4 py-2.5 text-sm text-asfalto-600 flex items-center gap-2">
+          <Clock className="w-4 h-4 shrink-0" />
+          Este perfil está oculto do ranking e das listas públicas.
+        </div>
+      )}
+
       {/* Cabeçalho */}
       <div className="flex flex-col items-center text-center gap-3">
         {piloto.foto_url ? (

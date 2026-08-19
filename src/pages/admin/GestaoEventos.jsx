@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Plus, ChevronDown, ChevronUp, User, MapPin } from 'lucide-react';
-
-function formatarData(data) {
-  return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  });
-}
+import { formatarData } from '../../lib/data.js';
 
 export default function GestaoEventos() {
   const [eventos, setEventos] = useState(null);

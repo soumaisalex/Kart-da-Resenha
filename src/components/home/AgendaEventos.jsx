@@ -1,13 +1,6 @@
 import { CalendarClock, Flag, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-function formatarData(data) {
-  return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  });
-}
+import { formatarData } from '../../lib/data.js';
 
 export default function AgendaEventos({ ultimoPassado, proximoFuturo }) {
   if (!ultimoPassado && !proximoFuturo) return null;

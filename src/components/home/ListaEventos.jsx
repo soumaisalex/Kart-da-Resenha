@@ -1,13 +1,6 @@
 import { Download, MapPin, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-function formatarData(data) {
-  return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-}
+import { formatarDataAbrev } from '../../lib/data.js';
 
 export default function ListaEventos({ eventos }) {
   if (!eventos.length) return null;
@@ -21,7 +14,7 @@ export default function ListaEventos({ eventos }) {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-checkered truncate">{evento.nome || 'Corrida'}</p>
               <p className="text-xs text-asfalto-600 flex items-center gap-1 flex-wrap">
-                {formatarData(evento.data_evento)}
+                {formatarDataAbrev(evento.data_evento)}
                 {evento.local && (
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" /> {evento.local}

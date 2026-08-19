@@ -1,5 +1,9 @@
 // Assume "temporada" = ano civil da data do evento, já que o projeto não tem um
 // conceito de temporada separado no schema (corridas são esporádicas, intervalo grande).
+//
+// Em todas as queries que envolvem outros pilotos (pra calcular posição/total),
+// pilotos com oculto = true são excluídos — eles saem do ranking e da pontuação,
+// mas o histórico de resultados deles continua no banco (não é apagado).
 
 export async function obterEstatisticasPiloto(sql, pilotoId) {
   const [stats] = await sql`
@@ -33,7 +37,7 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
              COALESCE(SUM(rt.pontos_posicao + rt.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados_temporada rt ON rt.piloto_id = p.id
-      WHERE p.status = 'aprovado'
+      WHERE p.status = 'aprovado' AND p.oculto = false
       GROUP BY p.id
     ),
     ranqueado AS (
@@ -60,6 +64,8 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
       FROM resultados r
       JOIN baterias b ON b.id = r.bateria_id
       JOIN ultimo_evento_piloto ue ON ue.evento_id = b.evento_id
+      LEFT JOIN pilotos p2 ON p2.id = r.piloto_id
+      WHERE r.piloto_id IS NULL OR p2.oculto = false
       GROUP BY r.piloto_id
     ),
     ranqueado AS (
@@ -86,7 +92,9 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
              SUM(r.pontos_posicao + r.pontos_volta_rapida) AS pontos
       FROM resultados r
       JOIN baterias b ON b.id = r.bateria_id
+      LEFT JOIN pilotos p2 ON p2.id = r.piloto_id
       WHERE b.evento_id IN (SELECT evento_id FROM eventos_piloto)
+        AND (r.piloto_id IS NULL OR p2.oculto = false)
       GROUP BY b.evento_id, r.piloto_id
     ),
     ranqueado AS (
