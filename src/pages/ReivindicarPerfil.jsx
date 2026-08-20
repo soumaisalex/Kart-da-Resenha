@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Flag, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function ReivindicarPerfil() {
-  const [form, setForm] = useState({ nome: '', telefone: '', email: '', instagram: '', foto_url: '' });
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState({
+    nome: searchParams.get('nome') || '',
+    telefone: '',
+    email: '',
+    instagram: '',
+    foto_url: ''
+  });
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState(null);
   const [concluido, setConcluido] = useState(false);
@@ -62,6 +69,12 @@ export default function ReivindicarPerfil() {
       </div>
 
       <form onSubmit={enviar} className="space-y-4">
+        {searchParams.get('nome') && (
+          <p className="text-sm text-asfalto-600 bg-asfalto-800 border border-asfalto-700 rounded-lg px-3 py-2">
+            Encontramos resultados no nome <strong className="text-checkered">{searchParams.get('nome')}</strong> —
+            reivindique pra vincular esse histórico ao seu perfil.
+          </p>
+        )}
         <Campo label="Nome *" valor={form.nome} onChange={(v) => atualizar('nome', v)} obrigatorio />
         <Campo label="Telefone" valor={form.telefone} onChange={(v) => atualizar('telefone', v)} placeholder="(79) 9XXXX-XXXX" />
         <Campo label="E-mail" valor={form.email} onChange={(v) => atualizar('email', v)} tipo="email" />

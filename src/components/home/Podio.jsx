@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy } from 'lucide-react';
+import { Trophy, UserPlus } from 'lucide-react';
 
 const ALTURA = { 1: 'h-36 sm:h-44', 2: 'h-24 sm:h-32', 3: 'h-16 sm:h-24' };
 const ORDEM_VISUAL = { 1: 'order-2', 2: 'order-1', 3: 'order-3' };
@@ -13,10 +13,14 @@ export default function Podio({ top3 }) {
     <div className="flex items-end justify-center gap-4 sm:gap-8">
       {top3.map((piloto, i) => {
         const posicao = i + 1;
+        const destino = piloto.vinculado
+          ? `/piloto/${piloto.piloto_id}`
+          : `/reivindicar?nome=${encodeURIComponent(piloto.nome)}`;
+
         return (
           <Link
-            key={piloto.piloto_id}
-            to={`/piloto/${piloto.piloto_id}`}
+            key={piloto.piloto_id ?? piloto.nome}
+            to={destino}
             className={`flex flex-col items-center ${ORDEM_VISUAL[posicao]} group`}
           >
             {piloto.foto_url ? (
@@ -27,7 +31,11 @@ export default function Podio({ top3 }) {
               />
             ) : (
               <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-asfalto-800 border-4 ${COR_BORDA[posicao]} -mb-2 z-10 flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                <Trophy className={`w-6 h-6 ${COR_TEXTO[posicao]}`} />
+                {piloto.vinculado ? (
+                  <Trophy className={`w-6 h-6 ${COR_TEXTO[posicao]}`} />
+                ) : (
+                  <UserPlus className="w-6 h-6 text-asfalto-600" />
+                )}
               </div>
             )}
 
@@ -37,6 +45,11 @@ export default function Podio({ top3 }) {
             <p className={`font-display text-xs sm:text-sm ${COR_TEXTO[posicao]} mb-2`}>
               {Number(piloto.pontos_totais)} pts
             </p>
+            {!piloto.vinculado && (
+              <span className="text-[10px] text-asfalto-600 border border-asfalto-600 rounded-full px-2 py-0.5 -mt-1 mb-2">
+                Reivindicar perfil
+              </span>
+            )}
 
             <div
               className={`relative w-20 sm:w-28 ${ALTURA[posicao]} rounded-t-md bg-asfalto-800
