@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Check, X, Loader2, User, Phone, Mail, Instagram, Inbox, Eye, EyeOff, Pencil } from 'lucide-react';
+import { Check, X, Loader2, User, Phone, Mail, Instagram, Inbox, Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
 import EditarPerfilAdminModal from './EditarPerfilAdminModal.jsx';
+import ConfirmarModal from '../../components/admin/ConfirmarModal.jsx';
 
-export default function AprovacaoPerfis() {
+export default function GestaoPilotos() {
   const [pendentes, setPendentes] = useState(null); // null = carregando
   const [aprovados, setAprovados] = useState(null);
   const [processando, setProcessando] = useState(null); // id em ação no momento
   const [erro, setErro] = useState(null);
   const [pilotoEditando, setPilotoEditando] = useState(null);
+  const [pilotoParaExcluir, setPilotoParaExcluir] = useState(null);
+  const [excluindo, setExcluindo] = useState(false);
 
   useEffect(() => {
     carregarPendentes();
@@ -69,6 +72,20 @@ export default function AprovacaoPerfis() {
       setErro(e.message);
     } finally {
       setProcessando(null);
+    }
+  }
+
+  async function excluirPiloto(piloto) {
+    setExcluindo(true);
+    try {
+      const resp = await fetch(`/api/pilotos/gerenciar/${piloto.id}`, { method: 'DELETE' });
+      if (!resp.ok) throw new Error('Não foi possível excluir o piloto');
+      setAprovados((atual) => atual.filter((p) => p.id !== piloto.id));
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setExcluindo(false);
+      setPilotoParaExcluir(null);
     }
   }
 
@@ -147,9 +164,10 @@ export default function AprovacaoPerfis() {
       </div>
 
       <div>
-        <h2 className="font-display font-semibold text-xl text-checkered mb-1">Perfis aprovados</h2>
+        <h2 className="font-display font-semibold text-xl text-checkered mb-1">Pilotos aprovados</h2>
         <p className="text-asfalto-600 mb-6 text-sm">
-          Ocultar um perfil o remove do ranking, das pontuações e das listas públicas — sem apagar o histórico dele.
+          Ocultar remove do ranking sem apagar histórico. Excluir apaga o perfil e solta os resultados
+          de volta pro estado "não vinculado" — o nome pode ser reivindicado de novo depois.
         </p>
 
         {aprovados === null && (
@@ -201,6 +219,13 @@ export default function AprovacaoPerfis() {
                 )}
                 {piloto.oculto ? 'Mostrar' : 'Ocultar'}
               </button>
+              <button
+                onClick={() => setPilotoParaExcluir(piloto)}
+                className="text-asfalto-600 hover:text-racing-light shrink-0"
+                aria-label="Excluir piloto"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           ))}
         </div>
@@ -216,6 +241,17 @@ export default function AprovacaoPerfis() {
             );
             setPilotoEditando(null);
           }}
+        />
+      )}
+
+      {pilotoParaExcluir && (
+        <ConfirmarModal
+          titulo={`Excluir o perfil de ${pilotoParaExcluir.nome}?`}
+          mensagem="O histórico de resultados dele não é apagado, mas volta a aparecer como 'não vinculado' — alguém pode reivindicar esse nome de novo depois. Essa ação não pode ser desfeita."
+          textoConfirmar="Excluir perfil"
+          confirmando={excluindo}
+          onConfirmar={() => excluirPiloto(pilotoParaExcluir)}
+          onCancelar={() => setPilotoParaExcluir(null)}
         />
       )}
     </div>

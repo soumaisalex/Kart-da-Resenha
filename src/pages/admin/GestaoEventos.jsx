@@ -3,6 +3,7 @@ import { Loader2, Plus, ChevronDown, ChevronUp, User, MapPin, Pencil, Trash2 } f
 import { formatarData } from '../../lib/data.js';
 import { msParaTempo } from '../../lib/tempo.js';
 import EditarEventoModal from './EditarEventoModal.jsx';
+import ConfirmarModal from '../../components/admin/ConfirmarModal.jsx';
 
 export default function GestaoEventos() {
   const [eventos, setEventos] = useState(null);
@@ -13,6 +14,7 @@ export default function GestaoEventos() {
   const [detalhePorEvento, setDetalhePorEvento] = useState({});
   const [eventoEditando, setEventoEditando] = useState(null);
   const [excluindo, setExcluindo] = useState(null);
+  const [eventoParaExcluir, setEventoParaExcluir] = useState(null);
 
   useEffect(() => {
     carregar();
@@ -62,12 +64,6 @@ export default function GestaoEventos() {
   }
 
   async function excluirEvento(evento) {
-    const confirmar = window.confirm(
-      `Excluir o evento "${evento.nome || evento.local || 'sem nome'}" (${formatarData(evento.data_evento)})?\n\n` +
-      'Isso apaga todos os resultados e confirmações de presença vinculados a ele. Essa ação não pode ser desfeita.'
-    );
-    if (!confirmar) return;
-
     setExcluindo(evento.id);
     try {
       const resp = await fetch(`/api/eventos/${evento.id}`, { method: 'DELETE' });
@@ -77,6 +73,7 @@ export default function GestaoEventos() {
       setErro(e.message);
     } finally {
       setExcluindo(null);
+      setEventoParaExcluir(null);
     }
   }
 
@@ -130,7 +127,7 @@ export default function GestaoEventos() {
               excluindo={excluindo === evento.id}
               onToggle={() => alternarExpandido(evento)}
               onEditar={() => setEventoEditando(evento)}
-              onExcluir={() => excluirEvento(evento)}
+              onExcluir={() => setEventoParaExcluir(evento)}
             />
           ))}
         </div>
@@ -151,7 +148,7 @@ export default function GestaoEventos() {
               excluindo={excluindo === evento.id}
               onToggle={() => alternarExpandido(evento)}
               onEditar={() => setEventoEditando(evento)}
-              onExcluir={() => excluirEvento(evento)}
+              onExcluir={() => setEventoParaExcluir(evento)}
             />
           ))}
         </div>
@@ -162,6 +159,17 @@ export default function GestaoEventos() {
           evento={eventoEditando}
           onFechar={() => setEventoEditando(null)}
           onSalvo={eventoAtualizado}
+        />
+      )}
+
+      {eventoParaExcluir && (
+        <ConfirmarModal
+          titulo={`Excluir "${eventoParaExcluir.nome || eventoParaExcluir.local || 'evento sem nome'}"?`}
+          mensagem={`${formatarData(eventoParaExcluir.data_evento)} — isso apaga todos os resultados e confirmações de presença vinculados a ele. Essa ação não pode ser desfeita.`}
+          textoConfirmar="Excluir evento"
+          confirmando={excluindo === eventoParaExcluir.id}
+          onConfirmar={() => excluirEvento(eventoParaExcluir)}
+          onCancelar={() => setEventoParaExcluir(null)}
         />
       )}
     </div>

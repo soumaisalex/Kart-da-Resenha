@@ -7,7 +7,7 @@ import ConfiguracaoPontuacao from './admin/ConfiguracaoPontuacao.jsx';
 
 const ABAS = [
   { id: 'importar', label: 'Importar resultados', icone: UploadCloud, Componente: ImportarResultados },
-  { id: 'perfis', label: 'Aprovação de perfis', icone: UserCheck, Componente: AprovacaoPerfis },
+  { id: 'perfis', label: 'Pilotos', icone: UserCheck, Componente: AprovacaoPerfis },
   { id: 'eventos', label: 'Eventos', icone: CalendarClock, Componente: GestaoEventos },
   { id: 'pontuacao', label: 'Pontuação', icone: Trophy, Componente: ConfiguracaoPontuacao }
 ];

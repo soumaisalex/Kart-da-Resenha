@@ -1,5 +1,6 @@
 import { getDb } from '../../_lib/db.js';
 import { exigirAdmin } from '../../_lib/auth.js';
+import { removerPilotoEDesvincular } from '../../_lib/pilotoRemocao.js';
 
 // GET /api/pilotos/pendentes -> fila de aprovação (área admin)
 export async function onRequestGet(context) {
@@ -39,8 +40,6 @@ export async function onRequestPost(context) {
     return Response.json(piloto);
   }
 
-  await sql`UPDATE resultados SET piloto_id = NULL WHERE piloto_id = ${id}`;
-  const [piloto] = await sql`DELETE FROM pilotos WHERE id = ${id} RETURNING id, nome`;
-
+  const piloto = await removerPilotoEDesvincular(sql, id);
   return Response.json({ ...piloto, status: 'rejeitado' });
 }
