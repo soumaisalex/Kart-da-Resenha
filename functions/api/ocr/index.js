@@ -1,4 +1,5 @@
 import { exigirAdmin } from '../../_lib/auth.js';
+import { jsonrepair } from 'jsonrepair';
 
 // POST /api/ocr
 // body: multipart/form-data com o arquivo (imagem) da tabela de resultados
@@ -54,12 +55,17 @@ function extrairJson(texto) {
   corpo = corpo
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2018\u2019]/g, "'")
-    // Corrige vírgula decimal (formato brasileiro, ex: 53,24) pra ponto — comum a IA
-    // escrever assim mesmo quando instruída a não fazer, especialmente em vel_media.
+    // Valores tipo tempo (mm:ss.mmm) que a IA às vezes esquece de colocar entre aspas
+    // (comum acontecer em vel_media, quando ela "erra a coluna") — o ':' dentro de um
+    // token sem aspas quebra o parser, então colocamos aspas nele.
+    .replace(/:\s*(\d{1,2}:[\d:.]+)(?=\s*[,}\]])/g, ': "$1"')
+    // Vírgula decimal (formato brasileiro, ex: 53,24) vira ponto
     .replace(/(\d+),(\d+)(?=\s*[},\]])/g, '$1.$2')
     .replace(/,(\s*[}\]])/g, '$1');
 
-  return JSON.parse(corpo);
+  // jsonrepair como rede de segurança final — corrige outras imperfeições comuns em
+  // saída de LLM (aspas faltando, vírgulas faltando, etc.) que as correções acima não cobrem.
+  return JSON.parse(jsonrepair(corpo));
 }
 
 export async function onRequestPost(context) {
