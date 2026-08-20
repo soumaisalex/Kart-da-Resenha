@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react';
 import { Check, AlertTriangle, Loader2, User, Trash2, Plus } from 'lucide-react';
 import { tempoParaMs } from '../../lib/tempo.js';
 import { sugerirPiloto } from '../../lib/pilotoMatching.js';
+import { formatarData } from '../../lib/data.js';
 
 export default function RevisaoResultados({ dadosExtraidos, onImportado, onCancelar }) {
+  const [eventos, setEventos] = useState([]);
+  const [eventoSelecionadoId, setEventoSelecionadoId] = useState(''); // '' = criar novo evento
+
   const [evento, setEvento] = useState({
     nome: dadosExtraidos.evento?.descricao_bateria || '',
     data_evento: dadosExtraidos.evento?.data || '',
@@ -31,7 +35,8 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState(null);
 
-  // Carrega pilotos aprovados e tenta sugerir automaticamente o vínculo de cada linha
+  // Carrega pilotos aprovados (pra sugerir vínculo) e eventos já cadastrados (pra permitir
+  // anexar essa bateria a um evento existente em vez de criar um novo automaticamente)
   useEffect(() => {
     fetch('/api/pilotos')
       .then((r) => r.json())
@@ -49,7 +54,14 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
         );
       })
       .catch(() => {});
+
+    fetch('/api/eventos')
+      .then((r) => r.json())
+      .then(setEventos)
+      .catch(() => {});
   }, []);
+
+  const eventoSelecionado = eventos.find((e) => String(e.id) === String(eventoSelecionadoId));
 
   function atualizarLinha(index, campo, valor) {
     setLinhas((atual) => atual.map((l, i) => (i === index ? { ...l, [campo]: valor } : l)));
@@ -81,6 +93,11 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
   async function confirmarImportacao() {
     setErro(null);
 
+    if (!eventoSelecionadoId && !evento.data_evento) {
+      setErro('Informe a data do evento, ou selecione um evento existente.');
+      return;
+    }
+
     const resultadosInvalidos = linhas.filter((l) => !l.nome_bruto || !l.posicao);
     if (resultadosInvalidos.length) {
       setErro('Toda linha precisa de nome e posição preenchidos.');
@@ -90,7 +107,9 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
     setEnviando(true);
     try {
       const payload = {
-        evento: { ...evento, arquivo_original_url: dadosExtraidos.arquivo_original_url },
+        evento: eventoSelecionadoId
+          ? { id: Number(eventoSelecionadoId), arquivo_original_url: dadosExtraidos.arquivo_original_url }
+          : { ...evento, arquivo_original_url: dadosExtraidos.arquivo_original_url },
         bateria,
         resultados: linhas.map((l) => ({
           nome_bruto: l.nome_bruto,
@@ -130,12 +149,38 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
         </p>
       </div>
 
-      {/* Dados do evento / bateria */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Campo label="Data do evento" tipo="date" valor={evento.data_evento}
-          onChange={(v) => setEvento({ ...evento, data_evento: v })} />
-        <Campo label="Local" valor={evento.local}
-          onChange={(v) => setEvento({ ...evento, local: v })} />
+      {/* Escolha: anexar a um evento já existente, ou criar um novo */}
+      <div>
+        <label className="flex flex-col gap-1 text-sm max-w-md">
+          <span className="text-asfalto-600">Evento</span>
+          <select
+            value={eventoSelecionadoId}
+            onChange={(e) => setEventoSelecionadoId(e.target.value)}
+            className="bg-asfalto-800 border border-asfalto-600 rounded px-3 py-2 text-checkered"
+          >
+            <option value="">+ Criar novo evento</option>
+            {eventos.map((e) => (
+              <option key={e.id} value={e.id}>
+                {formatarData(e.data_evento)} — {e.nome || e.local || 'Corrida'}
+                {e.tipo === 'futuro' ? ' (agendada)' : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {/* Dados do evento — só editáveis se for criar um evento novo */}
+      {!eventoSelecionadoId && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Campo label="Data do evento" tipo="date" valor={evento.data_evento}
+            onChange={(v) => setEvento({ ...evento, data_evento: v })} />
+          <Campo label="Local" valor={evento.local}
+            onChange={(v) => setEvento({ ...evento, local: v })} />
+        </div>
+      )}
+
+      {/* Descrição da bateria — sempre editável, cada bateria é independente mesmo dentro do mesmo evento */}
+      <div className="max-w-xs">
         <Campo label="Descrição da bateria" valor={bateria.descricao}
           onChange={(v) => setBateria({ ...bateria, descricao: v })} />
       </div>
