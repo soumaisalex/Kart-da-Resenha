@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Plus, ChevronDown, ChevronUp, User, MapPin } from 'lucide-react';
+import { Loader2, Plus, ChevronDown, ChevronUp, User, MapPin, Pencil, Trash2 } from 'lucide-react';
 import { formatarData } from '../../lib/data.js';
+import { msParaTempo } from '../../lib/tempo.js';
+import EditarEventoModal from './EditarEventoModal.jsx';
 
 export default function GestaoEventos() {
   const [eventos, setEventos] = useState(null);
@@ -8,7 +10,9 @@ export default function GestaoEventos() {
   const [criando, setCriando] = useState(false);
   const [erro, setErro] = useState(null);
   const [expandido, setExpandido] = useState(null);
-  const [confirmadosPorEvento, setConfirmadosPorEvento] = useState({});
+  const [detalhePorEvento, setDetalhePorEvento] = useState({});
+  const [eventoEditando, setEventoEditando] = useState(null);
+  const [excluindo, setExcluindo] = useState(null);
 
   useEffect(() => {
     carregar();
@@ -50,11 +54,36 @@ export default function GestaoEventos() {
       return;
     }
     setExpandido(evento.id);
-    if (!confirmadosPorEvento[evento.id]) {
+    if (!detalhePorEvento[evento.id]) {
       const resp = await fetch(`/api/eventos/${evento.id}`);
       const dados = await resp.json();
-      setConfirmadosPorEvento((atual) => ({ ...atual, [evento.id]: dados.confirmados }));
+      setDetalhePorEvento((atual) => ({ ...atual, [evento.id]: dados }));
     }
+  }
+
+  async function excluirEvento(evento) {
+    const confirmar = window.confirm(
+      `Excluir o evento "${evento.nome || evento.local || 'sem nome'}" (${formatarData(evento.data_evento)})?\n\n` +
+      'Isso apaga todos os resultados e confirmações de presença vinculados a ele. Essa ação não pode ser desfeita.'
+    );
+    if (!confirmar) return;
+
+    setExcluindo(evento.id);
+    try {
+      const resp = await fetch(`/api/eventos/${evento.id}`, { method: 'DELETE' });
+      if (!resp.ok) throw new Error('Não foi possível excluir o evento');
+      setEventos((atual) => atual.filter((e) => e.id !== evento.id));
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setExcluindo(null);
+    }
+  }
+
+  function eventoAtualizado(atualizado) {
+    setEventos((atual) => atual.map((e) => (e.id === atualizado.id ? { ...e, ...atualizado } : e)));
+    setDetalhePorEvento((atual) => ({ ...atual, [atualizado.id]: { ...atual[atualizado.id], ...atualizado } }));
+    setEventoEditando(null);
   }
 
   const futuros = (eventos || []).filter((e) => e.tipo === 'futuro');
@@ -93,46 +122,16 @@ export default function GestaoEventos() {
         )}
         <div className="space-y-2">
           {futuros.map((evento) => (
-            <div key={evento.id} className="border border-asfalto-700 rounded-lg overflow-hidden">
-              <button
-                onClick={() => alternarExpandido(evento)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-asfalto-900 text-left"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-checkered truncate">{evento.nome || 'Corrida'}</p>
-                  <p className="text-xs text-asfalto-600 flex items-center gap-1">
-                    {formatarData(evento.data_evento)}
-                    {evento.local && <><MapPin className="w-3 h-3 ml-1" /> {evento.local}</>}
-                  </p>
-                </div>
-                {expandido === evento.id ? <ChevronUp className="w-4 h-4 text-asfalto-600" /> : <ChevronDown className="w-4 h-4 text-asfalto-600" />}
-              </button>
-
-              {expandido === evento.id && (
-                <div className="px-4 pb-4">
-                  {!confirmadosPorEvento[evento.id] ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-racing" />
-                  ) : confirmadosPorEvento[evento.id].length === 0 ? (
-                    <p className="text-xs text-asfalto-600">Ninguém confirmou ainda.</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {confirmadosPorEvento[evento.id].map((c) => (
-                        <div key={c.id} className="flex items-center gap-1.5 bg-asfalto-800 rounded-full pl-1 pr-3 py-1">
-                          {c.foto_url ? (
-                            <img src={c.foto_url} alt={c.nome} className="w-6 h-6 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-asfalto-700 flex items-center justify-center">
-                              <User className="w-3 h-3 text-asfalto-600" />
-                            </div>
-                          )}
-                          <span className="text-xs text-checkered">{c.nome}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <EventoLinha
+              key={evento.id}
+              evento={evento}
+              expandido={expandido === evento.id}
+              detalhe={detalhePorEvento[evento.id]}
+              excluindo={excluindo === evento.id}
+              onToggle={() => alternarExpandido(evento)}
+              onEditar={() => setEventoEditando(evento)}
+              onExcluir={() => excluirEvento(evento)}
+            />
           ))}
         </div>
       </div>
@@ -144,23 +143,125 @@ export default function GestaoEventos() {
         )}
         <div className="space-y-2">
           {passados.map((evento) => (
-            <div key={evento.id} className="flex items-center gap-3 px-4 py-3 border border-asfalto-700 rounded-lg">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-checkered truncate">{evento.nome || 'Corrida'}</p>
-                <p className="text-xs text-asfalto-600 flex items-center gap-1">
-                  {formatarData(evento.data_evento)}
-                  {evento.local && <><MapPin className="w-3 h-3 ml-1" /> {evento.local}</>}
-                </p>
-              </div>
-              {evento.arquivo_original_url && (
-                <a href={evento.arquivo_original_url} download className="text-xs text-racing hover:text-racing-light shrink-0">
-                  Baixar arquivo
-                </a>
-              )}
-            </div>
+            <EventoLinha
+              key={evento.id}
+              evento={evento}
+              expandido={expandido === evento.id}
+              detalhe={detalhePorEvento[evento.id]}
+              excluindo={excluindo === evento.id}
+              onToggle={() => alternarExpandido(evento)}
+              onEditar={() => setEventoEditando(evento)}
+              onExcluir={() => excluirEvento(evento)}
+            />
           ))}
         </div>
       </div>
+
+      {eventoEditando && (
+        <EditarEventoModal
+          evento={eventoEditando}
+          onFechar={() => setEventoEditando(null)}
+          onSalvo={eventoAtualizado}
+        />
+      )}
+    </div>
+  );
+}
+
+function EventoLinha({ evento, expandido, detalhe, excluindo, onToggle, onEditar, onExcluir }) {
+  return (
+    <div className="border border-asfalto-700 rounded-lg overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 hover:bg-asfalto-900">
+        <button onClick={onToggle} className="flex-1 flex items-center gap-3 text-left min-w-0">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-checkered truncate">{evento.nome || 'Corrida'}</p>
+            <p className="text-xs text-asfalto-600 flex items-center gap-1">
+              {formatarData(evento.data_evento)}
+              {evento.local && <><MapPin className="w-3 h-3 ml-1" /> {evento.local}</>}
+            </p>
+          </div>
+          {expandido ? <ChevronUp className="w-4 h-4 text-asfalto-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-asfalto-600 shrink-0" />}
+        </button>
+        <button onClick={onEditar} className="text-asfalto-600 hover:text-checkered shrink-0" aria-label="Editar evento">
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button onClick={onExcluir} disabled={excluindo} className="text-asfalto-600 hover:text-racing-light shrink-0 disabled:opacity-60" aria-label="Excluir evento">
+          {excluindo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {expandido && (
+        <div className="px-4 pb-4 space-y-4">
+          {!detalhe ? (
+            <Loader2 className="w-4 h-4 animate-spin text-racing" />
+          ) : (
+            <>
+              {evento.tipo === 'futuro' && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-asfalto-600 mb-2">
+                    {detalhe.confirmados.length} confirmado{detalhe.confirmados.length !== 1 ? 's' : ''}
+                  </p>
+                  {detalhe.confirmados.length === 0 ? (
+                    <p className="text-xs text-asfalto-600">Ninguém confirmou ainda.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {detalhe.confirmados.map((c) => (
+                        <PilotoChip key={c.id} nome={c.nome} foto_url={c.foto_url} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {detalhe.baterias?.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-wide text-asfalto-600">Resultados</p>
+                  {detalhe.baterias.map((bateria) => (
+                    <div key={bateria.id}>
+                      {bateria.descricao && (
+                        <p className="text-xs text-asfalto-600 mb-1">{bateria.descricao}</p>
+                      )}
+                      <div className="space-y-1">
+                        {bateria.resultados.map((r) => (
+                          <div key={r.id} className="flex items-center gap-3 text-sm">
+                            <span className="w-6 text-asfalto-600 font-display shrink-0">{r.posicao}º</span>
+                            <span className="flex-1 text-checkered truncate">{r.piloto_nome || r.nome_bruto}</span>
+                            {r.melhor_volta_ms && (
+                              <span className="text-asfalto-600 text-xs shrink-0">{msParaTempo(r.melhor_volta_ms)}</span>
+                            )}
+                            <span className="text-racing text-xs font-display shrink-0 w-12 text-right">
+                              {Number(r.pontos_posicao) + Number(r.pontos_volta_rapida)} pts
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {evento.tipo === 'passado' && !detalhe.baterias?.length && (
+                <p className="text-xs text-asfalto-600">Nenhum resultado importado pra esse evento.</p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PilotoChip({ nome, foto_url }) {
+  return (
+    <div className="flex items-center gap-1.5 bg-asfalto-800 rounded-full pl-1 pr-3 py-1">
+      {foto_url ? (
+        <img src={foto_url} alt={nome} className="w-6 h-6 rounded-full object-cover" />
+      ) : (
+        <div className="w-6 h-6 rounded-full bg-asfalto-700 flex items-center justify-center">
+          <User className="w-3 h-3 text-asfalto-600" />
+        </div>
+      )}
+      <span className="text-xs text-checkered">{nome}</span>
     </div>
   );
 }

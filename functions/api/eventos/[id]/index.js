@@ -1,6 +1,7 @@
 import { getDb } from '../../../_lib/db.js';
+import { exigirAdmin } from '../../../_lib/auth.js';
 
-// GET /api/eventos/:id -> detalhe do evento + lista de pilotos confirmados
+// GET /api/eventos/:id -> detalhe do evento + confirmados + resultados (agrupados por bateria)
 export async function onRequestGet(context) {
   const sql = getDb(context.env);
   const { id } = context.params;
@@ -19,5 +20,64 @@ export async function onRequestGet(context) {
     ORDER BY c.confirmado_em ASC
   `;
 
-  return Response.json({ ...evento, confirmados });
+  const baterias = await sql`
+    SELECT id, descricao, horario
+    FROM baterias
+    WHERE evento_id = ${id}
+    ORDER BY horario NULLS LAST, id
+  `;
+
+  const resultados = await sql`
+    SELECT r.id, r.bateria_id, r.nome_bruto, r.posicao, r.pontos_posicao, r.pontos_volta_rapida,
+           r.melhor_volta_ms, r.tempo_total_ms, r.piloto_id, p.nome AS piloto_nome, p.foto_url
+    FROM resultados r
+    JOIN baterias b ON b.id = r.bateria_id
+    LEFT JOIN pilotos p ON p.id = r.piloto_id
+    WHERE b.evento_id = ${id}
+    ORDER BY b.id, r.posicao
+  `;
+
+  const bateriasComResultados = baterias.map((b) => ({
+    ...b,
+    resultados: resultados.filter((r) => r.bateria_id === b.id)
+  }));
+
+  return Response.json({ ...evento, confirmados, baterias: bateriasComResultados });
+}
+
+// PATCH /api/eventos/:id -> editar nome/data/local (só admin)
+export async function onRequestPatch(context) {
+  const negado = await exigirAdmin(context);
+  if (negado) return negado;
+
+  const sql = getDb(context.env);
+  const { id } = context.params;
+  const body = await context.request.json();
+
+  const [evento] = await sql`
+    UPDATE eventos SET
+      nome = COALESCE(${body.nome}, nome),
+      data_evento = COALESCE(${body.data_evento}, data_evento),
+      local = COALESCE(${body.local}, local)
+    WHERE id = ${id}
+    RETURNING id, nome, data_evento, local, tipo
+  `;
+  if (!evento) return Response.json({ erro: 'Evento não encontrado' }, { status: 404 });
+
+  return Response.json(evento);
+}
+
+// DELETE /api/eventos/:id -> exclui o evento e tudo vinculado a ele (só admin)
+// Baterias, resultados e confirmações são apagados em cascata (FK ON DELETE CASCADE no schema).
+export async function onRequestDelete(context) {
+  const negado = await exigirAdmin(context);
+  if (negado) return negado;
+
+  const sql = getDb(context.env);
+  const { id } = context.params;
+
+  const [excluido] = await sql`DELETE FROM eventos WHERE id = ${id} RETURNING id`;
+  if (!excluido) return Response.json({ erro: 'Evento não encontrado' }, { status: 404 });
+
+  return Response.json({ ok: true });
 }
