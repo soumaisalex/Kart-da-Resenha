@@ -23,7 +23,10 @@ export default function UploadResultados({ onExtraido }) {
         const partes = [dados.erro || 'Não foi possível ler o arquivo'];
         if (dados.detalhe) partes.push(`detalhe: ${dados.detalhe}`);
         if (dados.detalhe_parse) partes.push(`erro do parser: ${dados.detalhe_parse}`);
-        if (dados.bruto) partes.push(`resposta da IA (completa): ${dados.bruto}`);
+        if (dados.bruto) {
+          const brutoTexto = typeof dados.bruto === 'string' ? dados.bruto : JSON.stringify(dados.bruto);
+          partes.push(`resposta da IA (completa): ${brutoTexto}`);
+        }
         throw new Error(partes.join(' — '));
       }
 

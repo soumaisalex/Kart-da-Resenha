@@ -135,14 +135,21 @@ export async function onRequestPost(context) {
         max_tokens: 4096,
         temperature: 0.2
       });
-      ultimaRespostaBruta = resultadoIA.response;
+      const resposta = resultadoIA.response;
+      ultimaRespostaBruta = typeof resposta === 'string' ? resposta : JSON.stringify(resposta);
 
       try {
-        dadosExtraidos = extrairJson(resultadoIA.response);
+        // Às vezes o Workers AI já devolve o JSON pronto como objeto (não como texto) —
+        // nesse caso não precisa (e não dá) rodar o parser de texto em cima.
+        dadosExtraidos = typeof resposta === 'string' ? extrairJson(resposta) : resposta;
+        if (!dadosExtraidos || typeof dadosExtraidos !== 'object') {
+          throw new Error('Resposta vazia ou em formato inesperado');
+        }
         ultimoErro = null;
         break;
       } catch (erroParse) {
         ultimoErro = erroParse;
+        dadosExtraidos = null;
       }
     }
 
