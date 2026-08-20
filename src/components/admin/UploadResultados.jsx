@@ -63,7 +63,7 @@ export default function UploadResultados({ onExtraido }) {
           <div className="flex flex-col items-center gap-3 text-checkered">
             <Loader2 className="w-8 h-8 animate-spin text-racing" />
             <p className="font-display font-medium">Lendo a tabela de resultados...</p>
-            <p className="text-sm text-asfalto-600">Isso pode levar alguns segundos</p>
+            <p className="text-sm text-asfalto-600">Isso pode levar até um minuto</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 text-checkered">
