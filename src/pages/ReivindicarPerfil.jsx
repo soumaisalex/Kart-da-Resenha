@@ -4,8 +4,10 @@ import { Flag, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function ReivindicarPerfil() {
   const [searchParams] = useSearchParams();
+  const nomeOriginal = searchParams.get('nome') || '';
+
   const [form, setForm] = useState({
-    nome: searchParams.get('nome') || '',
+    nome: nomeOriginal,
     telefone: '',
     email: '',
     instagram: '',
@@ -37,7 +39,7 @@ export default function ReivindicarPerfil() {
       const resp = await fetch('/api/pilotos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, vincular_nome_bruto: nomeOriginal || undefined })
       });
       const dados = await resp.json();
       if (!resp.ok) throw new Error(dados.erro || 'Não foi possível reivindicar o perfil');
@@ -73,13 +75,14 @@ export default function ReivindicarPerfil() {
       </div>
 
       <form onSubmit={enviar} className="space-y-4">
-        {searchParams.get('nome') && (
+        {nomeOriginal && (
           <p className="text-sm text-asfalto-600 bg-asfalto-800 border border-asfalto-700 rounded-lg px-3 py-2">
-            Encontramos resultados no nome <strong className="text-checkered">{searchParams.get('nome')}</strong> —
-            reivindique pra vincular esse histórico ao seu perfil.
+            Encontramos resultados registrados como <strong className="text-checkered">{nomeOriginal}</strong> —
+            reivindicando, esse histórico já fica vinculado ao seu perfil. Pode colocar abaixo o nome que
+            preferir usar aqui no site, não precisa ser igual.
           </p>
         )}
-        <Campo label="Nome *" valor={form.nome} onChange={(v) => atualizar('nome', v)} obrigatorio />
+        <Campo label="Nome de exibição *" valor={form.nome} onChange={(v) => atualizar('nome', v)} obrigatorio />
         <Campo label="Telefone *" valor={form.telefone} onChange={(v) => atualizar('telefone', v)} placeholder="(79) 9XXXX-XXXX" obrigatorio />
         <Campo label="E-mail" valor={form.email} onChange={(v) => atualizar('email', v)} tipo="email" />
         <Campo label="Instagram" valor={form.instagram} onChange={(v) => atualizar('instagram', v)} placeholder="@usuario" />

@@ -12,8 +12,12 @@ export async function onRequestGet(context) {
   return Response.json(pilotos);
 }
 
-// POST /api/pilotos -> reivindicar perfil (nome_bruto identifica a linha de resultado a vincular)
-// body: { nome, telefone?, email?, instagram?, foto_url?, resultado_id_para_vincular? }
+// POST /api/pilotos -> reivindicar perfil
+// body: { nome, telefone?, email?, instagram?, foto_url?, vincular_nome_bruto? }
+// - nome: nome de exibição escolhido livremente pela pessoa (não precisa bater com nada)
+// - vincular_nome_bruto: nome exatamente como veio da leitura da tabela (nome_bruto),
+//   usado só pra encontrar e vincular o resultado correspondente — vem preenchido quando
+//   a pessoa clica em "Reivindicar" a partir de um resultado específico no ranking.
 // Sempre entra como status = 'pendente' — aprovação manual na área admin.
 export async function onRequestPost(context) {
   const sql = getDb(context.env);
@@ -33,13 +37,15 @@ export async function onRequestPost(context) {
     RETURNING id, nome, status
   `;
 
-  // Vincula automaticamente resultados já importados sob o mesmo nome (ainda sem perfil vinculado).
-  // Match exato ignorando maiúsculas/minúsculas — se o nome tiver diferenças de acento/grafia,
-  // o admin ainda pode vincular manualmente na tela de revisão de uma futura importação.
+  // Vincula resultados já importados, ainda sem perfil, cujo nome_bruto bate com o nome
+  // original do resultado que a pessoa clicou (vincular_nome_bruto) — ou, na ausência
+  // disso (reivindicação feita direto, sem vir de um resultado específico), tenta pelo
+  // próprio nome de exibição digitado, como melhor esforço.
+  const nomeParaVincular = (body.vincular_nome_bruto || body.nome).trim();
   await sql`
     UPDATE resultados
     SET piloto_id = ${piloto.id}
-    WHERE piloto_id IS NULL AND nome_bruto ILIKE ${body.nome.trim()}
+    WHERE piloto_id IS NULL AND nome_bruto ILIKE ${nomeParaVincular}
   `;
 
   return Response.json(piloto, { status: 201 });
