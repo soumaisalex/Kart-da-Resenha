@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Check, X, Loader2, User, Phone, Mail, Instagram, Inbox, Eye, EyeOff } from 'lucide-react';
+import { Check, X, Loader2, User, Phone, Mail, Instagram, Inbox, Eye, EyeOff, Pencil } from 'lucide-react';
+import EditarPerfilAdminModal from './EditarPerfilAdminModal.jsx';
 
 export default function AprovacaoPerfis() {
   const [pendentes, setPendentes] = useState(null); // null = carregando
   const [aprovados, setAprovados] = useState(null);
   const [processando, setProcessando] = useState(null); // id em ação no momento
   const [erro, setErro] = useState(null);
+  const [pilotoEditando, setPilotoEditando] = useState(null);
 
   useEffect(() => {
     carregarPendentes();
@@ -178,6 +180,13 @@ export default function AprovacaoPerfis() {
                 </span>
               )}
               <button
+                onClick={() => setPilotoEditando(piloto)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-asfalto-600
+                           text-checkered text-sm hover:bg-asfalto-800 shrink-0"
+              >
+                <Pencil className="w-4 h-4" /> Editar
+              </button>
+              <button
                 onClick={() => alternarOculto(piloto)}
                 disabled={processando === piloto.id}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-asfalto-600
@@ -196,6 +205,19 @@ export default function AprovacaoPerfis() {
           ))}
         </div>
       </div>
+
+      {pilotoEditando && (
+        <EditarPerfilAdminModal
+          piloto={pilotoEditando}
+          onFechar={() => setPilotoEditando(null)}
+          onSalvo={(atualizado) => {
+            setAprovados((atual) =>
+              atual.map((p) => (p.id === atualizado.id ? { ...p, ...atualizado } : p))
+            );
+            setPilotoEditando(null);
+          }}
+        />
+      )}
     </div>
   );
 }

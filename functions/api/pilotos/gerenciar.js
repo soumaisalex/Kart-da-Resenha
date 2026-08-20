@@ -8,7 +8,7 @@ export async function onRequestGet(context) {
 
   const sql = getDb(context.env);
   const pilotos = await sql`
-    SELECT id, nome, foto_url, oculto
+    SELECT id, nome, foto_url, email, telefone, instagram, oculto
     FROM pilotos
     WHERE status = 'aprovado'
     ORDER BY nome
