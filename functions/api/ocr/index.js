@@ -31,6 +31,7 @@ Extraia para JSON estrito, sem texto fora do JSON, no seguinte formato:
   ]
 }
 Se algum campo não existir na imagem, use null. Não invente dados.
+Use ponto (.) como separador decimal em números (ex: 47.78), nunca vírgula — isso é JSON, não português.
 `;
 
 // Extrai o JSON mesmo que o modelo tenha escrito algum texto antes/depois dele
@@ -49,6 +50,9 @@ function extrairJson(texto) {
   corpo = corpo
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2018\u2019]/g, "'")
+    // Corrige vírgula decimal (formato brasileiro, ex: 53,24) pra ponto — comum a IA
+    // escrever assim mesmo quando instruída a não fazer, especialmente em vel_media.
+    .replace(/(\d+),(\d+)(?=\s*[},\]])/g, '$1.$2')
     .replace(/,(\s*[}\]])/g, '$1');
 
   return JSON.parse(corpo);
