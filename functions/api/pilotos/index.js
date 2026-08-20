@@ -22,6 +22,9 @@ export async function onRequestPost(context) {
   if (!body.nome || !body.nome.trim()) {
     return Response.json({ erro: 'Nome é obrigatório' }, { status: 400 });
   }
+  if (!body.telefone || !body.telefone.trim()) {
+    return Response.json({ erro: 'Telefone é obrigatório' }, { status: 400 });
+  }
 
   const [piloto] = await sql`
     INSERT INTO pilotos (nome, telefone, email, instagram, foto_url, status, reivindicado_em)

@@ -27,6 +27,10 @@ export default function ReivindicarPerfil() {
       setErro('O nome é obrigatório.');
       return;
     }
+    if (!form.telefone.trim()) {
+      setErro('O telefone é obrigatório — é o que garante que só você edite seu perfil depois.');
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -76,7 +80,7 @@ export default function ReivindicarPerfil() {
           </p>
         )}
         <Campo label="Nome *" valor={form.nome} onChange={(v) => atualizar('nome', v)} obrigatorio />
-        <Campo label="Telefone" valor={form.telefone} onChange={(v) => atualizar('telefone', v)} placeholder="(79) 9XXXX-XXXX" />
+        <Campo label="Telefone *" valor={form.telefone} onChange={(v) => atualizar('telefone', v)} placeholder="(79) 9XXXX-XXXX" obrigatorio />
         <Campo label="E-mail" valor={form.email} onChange={(v) => atualizar('email', v)} tipo="email" />
         <Campo label="Instagram" valor={form.instagram} onChange={(v) => atualizar('instagram', v)} placeholder="@usuario" />
         <Campo label="URL da foto" valor={form.foto_url} onChange={(v) => atualizar('foto_url', v)} placeholder="https://..." />
