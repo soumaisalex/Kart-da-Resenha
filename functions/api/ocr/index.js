@@ -14,7 +14,11 @@ import { exigirAdmin } from '../../_lib/auth.js';
 
 const PROMPT_EXTRACAO = `
 Você está lendo uma tabela de resultados de corrida de kart (formato Piquet Kart / LapTime).
-Extraia para JSON estrito, sem texto fora do JSON, no seguinte formato:
+
+RESPONDA SOMENTE COM O JSON. Nada de título, explicação, lista em markdown, bullets ou comentário
+antes ou depois. O primeiro caractere da sua resposta deve ser { e o último deve ser }.
+
+Formato exato:
 {
   "evento": { "data": "YYYY-MM-DD", "local": "string", "descricao_bateria": "string" },
   "resultados": [
@@ -108,22 +112,40 @@ export async function onRequestPost(context) {
     const arquivoUrl = `${env.R2_PUBLIC_BASE_URL}/${nomeArquivo}`;
 
     // 2. OCR via Workers AI (modelo de visão)
+    // O modelo às vezes ignora a instrução de responder só em JSON — tenta de novo
+    // automaticamente antes de desistir, já que isso é uma variação probabilística
+    // do modelo, não um erro determinístico que se repetiria sempre.
     const bytes = new Uint8Array(await arquivo.arrayBuffer());
-    const resultadoIA = await env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
-      prompt: PROMPT_EXTRACAO,
-      image: Array.from(bytes),
-      max_tokens: 4096
-    });
+    const imagemArray = Array.from(bytes);
 
     let dadosExtraidos;
-    try {
-      dadosExtraidos = extrairJson(resultadoIA.response);
-    } catch (erroParse) {
+    let ultimoErro;
+    let ultimaRespostaBruta;
+
+    for (let tentativa = 1; tentativa <= 3; tentativa++) {
+      const resultadoIA = await env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
+        prompt: PROMPT_EXTRACAO,
+        image: imagemArray,
+        max_tokens: 4096,
+        temperature: 0.2
+      });
+      ultimaRespostaBruta = resultadoIA.response;
+
+      try {
+        dadosExtraidos = extrairJson(resultadoIA.response);
+        ultimoErro = null;
+        break;
+      } catch (erroParse) {
+        ultimoErro = erroParse;
+      }
+    }
+
+    if (!dadosExtraidos) {
       return Response.json(
         {
-          erro: 'A IA não devolveu um JSON válido. Tente novamente com uma imagem mais nítida.',
-          detalhe_parse: erroParse?.message,
-          bruto: resultadoIA.response
+          erro: 'A IA não devolveu um JSON válido depois de 3 tentativas. Tente novamente com uma imagem mais nítida.',
+          detalhe_parse: ultimoErro?.message,
+          bruto: ultimaRespostaBruta
         },
         { status: 422 }
       );
