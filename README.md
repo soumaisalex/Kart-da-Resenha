@@ -41,7 +41,6 @@ wrangler.toml           # bindings de R2 e Workers AI
 
 ## Pendências conhecidas (marcadas com TODO no código)
 
-- Upload de foto de perfil (endpoint dedicado pro R2) — hoje é por URL manual
 - Matching fuzzy nome OCR → perfil existente é client-side, por similaridade simples
 - OCR só processa imagens (JPG/PNG) — PDF não é suportado pelo modelo de visão do Workers AI
 

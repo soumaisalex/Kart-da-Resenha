@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Flag, Loader2, CheckCircle2 } from 'lucide-react';
+import FotoUpload from '../components/FotoUpload.jsx';
 
 export default function ReivindicarPerfil() {
   const [searchParams] = useSearchParams();
@@ -86,7 +87,7 @@ export default function ReivindicarPerfil() {
         <Campo label="Telefone *" valor={form.telefone} onChange={(v) => atualizar('telefone', v)} placeholder="(79) 9XXXX-XXXX" obrigatorio />
         <Campo label="E-mail" valor={form.email} onChange={(v) => atualizar('email', v)} tipo="email" />
         <Campo label="Instagram" valor={form.instagram} onChange={(v) => atualizar('instagram', v)} placeholder="@usuario" />
-        <Campo label="URL da foto" valor={form.foto_url} onChange={(v) => atualizar('foto_url', v)} placeholder="https://..." />
+        <FotoUpload valor={form.foto_url} onChange={(v) => atualizar('foto_url', v)} />
 
         {erro && <p className="text-racing-light text-sm">{erro}</p>}
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
+import FotoUpload from '../FotoUpload.jsx';
 
 export default function EditarPerfilModal({ piloto, onFechar, onSalvo }) {
   const [form, setForm] = useState({
@@ -49,7 +50,7 @@ export default function EditarPerfilModal({ piloto, onFechar, onSalvo }) {
           <Campo label="Nome" valor={form.nome} onChange={(v) => atualizar('nome', v)} />
           <Campo label="E-mail" valor={form.email} onChange={(v) => atualizar('email', v)} tipo="email" />
           <Campo label="Instagram" valor={form.instagram} onChange={(v) => atualizar('instagram', v)} />
-          <Campo label="URL da foto" valor={form.foto_url} onChange={(v) => atualizar('foto_url', v)} />
+          <FotoUpload valor={form.foto_url} onChange={(v) => atualizar('foto_url', v)} />
 
           <div className="pt-2 border-t border-asfalto-700">
             <Campo
