@@ -16,6 +16,11 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
     setErro(null);
     setGerando(true);
     try {
+      // Espera as fontes carregarem de verdade antes de capturar — se a captura rolar
+      // antes disso, o navegador pode medir o layout com uma fonte e desenhar com outra,
+      // desalinhando o texto na imagem final (mesmo que a tela ao vivo esteja certa).
+      if (document.fonts?.ready) await document.fonts.ready;
+
       const dataUrl = await toPng(cartaoRef.current, { pixelRatio: 2, cacheBust: true });
       const blob = await (await fetch(dataUrl)).blob();
       const arquivo = new File([blob], `${piloto.nome.replace(/\s+/g, '-')}-kart-da-resenha.png`, {
@@ -55,17 +60,17 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
       {/* Card capturado pixel a pixel pela função de compartilhar */}
       <div
         ref={cartaoRef}
-        className="w-72 aspect-[9/16] rounded-2xl overflow-hidden relative flex flex-col justify-between
-                   bg-gradient-to-b from-asfalto-900 to-asfalto-950 p-6 border border-asfalto-700"
+        className="w-72 aspect-[9/16] rounded-2xl overflow-hidden relative flex flex-col
+                   bg-gradient-to-b from-asfalto-900 to-asfalto-950 border border-asfalto-700"
       >
         <div className="absolute inset-x-0 top-0 h-2 bg-[repeating-linear-gradient(90deg,#ff3b30_0_10px,#f5f5f0_10px_20px)]" />
 
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2 px-6 pt-6">
           <Trophy className="w-4 h-4 text-racing" />
           <span className="font-display font-semibold text-checkered text-sm tracking-wide">KART DA RESENHA</span>
         </div>
 
-        <div className="flex flex-col items-center gap-3 -mt-6">
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
           {fotoProxy ? (
             <img
               src={fotoProxy}
@@ -78,13 +83,13 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
               <User className="w-10 h-10 text-asfalto-600" />
             </div>
           )}
-          <p className="font-display font-bold text-2xl text-checkered text-center leading-tight">{piloto.nome}</p>
+          <p className="font-display font-bold text-2xl text-checkered leading-tight">{piloto.nome}</p>
           {posicaoGeral && (
             <p className="text-racing font-display font-semibold text-sm">{posicaoGeral}º no ranking geral</p>
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="grid grid-cols-3 gap-2 text-center px-6 pb-6">
           <Estatistica valor={piloto.stats?.total_corridas ?? 0} label="corridas" />
           <Estatistica valor={Number(piloto.stats?.pontos_totais ?? 0)} label="pontos" />
           <Estatistica
