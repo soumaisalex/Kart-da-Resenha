@@ -77,42 +77,24 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
     SELECT pontos, posicao, total_pilotos FROM ranqueado WHERE piloto_id = ${pilotoId}
   `;
 
+  // "Última corrida" mostra a posição LITERAL de chegada naquela bateria específica —
+  // de propósito NÃO é um rank calculado por pontos, porque o bônus de volta mais rápida
+  // pode inflar a pontuação de alguém sem mudar sua posição real no pódio daquela corrida
+  // (ex: 3º colocado que fez a volta mais rápida não deve aparecer como "2º" por causa disso).
   const [ultimoEvento] = await sql`
-    WITH ultimo_evento_id AS (
-      SELECT e.id AS evento_id, e.nome, e.data_evento
-      FROM eventos e
-      JOIN baterias b ON b.evento_id = e.id
-      JOIN resultados r ON r.bateria_id = b.id
-      WHERE r.piloto_id = ${pilotoId}
-      ORDER BY e.data_evento DESC
-      LIMIT 1
-    ),
-    resultados_evento AS (
-      SELECT r.piloto_id, r.nome_bruto, r.pontos_posicao, r.pontos_volta_rapida
+    WITH ultima_bateria AS (
+      SELECT b.id AS bateria_id, e.id AS evento_id, e.nome, e.data_evento, r.posicao
       FROM resultados r
       JOIN baterias b ON b.id = r.bateria_id
-      JOIN ultimo_evento_id ue ON ue.evento_id = b.evento_id
-    ),
-    todos AS (
-      SELECT re.piloto_id, NULL::text AS nome_bruto,
-             SUM(re.pontos_posicao + re.pontos_volta_rapida) AS pontos
-      FROM resultados_evento re
-      JOIN pilotos p ON p.id = re.piloto_id
-      WHERE re.piloto_id IS NOT NULL AND p.oculto = false
-      GROUP BY re.piloto_id
-      UNION ALL
-      SELECT NULL::int, TRIM(re.nome_bruto), SUM(re.pontos_posicao + re.pontos_volta_rapida)
-      FROM resultados_evento re
-      WHERE re.piloto_id IS NULL
-      GROUP BY TRIM(re.nome_bruto)
-    ),
-    ranqueado AS (
-      SELECT *, RANK() OVER (ORDER BY pontos DESC) AS posicao, COUNT(*) OVER () AS total_pilotos
-      FROM todos
+      JOIN eventos e ON e.id = b.evento_id
+      WHERE r.piloto_id = ${pilotoId}
+      ORDER BY e.data_evento DESC, b.horario DESC NULLS LAST, b.id DESC
+      LIMIT 1
     )
-    SELECT ue.evento_id, ue.nome, ue.data_evento, r.pontos, r.posicao, r.total_pilotos
-    FROM ultimo_evento_id ue
-    LEFT JOIN ranqueado r ON r.piloto_id = ${pilotoId}
+    SELECT
+      ub.evento_id, ub.nome, ub.data_evento, ub.posicao,
+      (SELECT COUNT(*) FROM resultados r2 WHERE r2.bateria_id = ub.bateria_id) AS total_pilotos
+    FROM ultima_bateria ub
   `;
 
   const historico = await sql`
@@ -198,41 +180,19 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
   `;
 
   const [ultimoEvento] = await sql`
-    WITH ultimo_evento_id AS (
-      SELECT e.id AS evento_id, e.nome, e.data_evento
-      FROM eventos e
-      JOIN baterias b ON b.evento_id = e.id
-      JOIN resultados r ON r.bateria_id = b.id
-      WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
-      ORDER BY e.data_evento DESC
-      LIMIT 1
-    ),
-    resultados_evento AS (
-      SELECT r.piloto_id, r.nome_bruto, r.pontos_posicao, r.pontos_volta_rapida
+    WITH ultima_bateria AS (
+      SELECT b.id AS bateria_id, e.id AS evento_id, e.nome, e.data_evento, r.posicao
       FROM resultados r
       JOIN baterias b ON b.id = r.bateria_id
-      JOIN ultimo_evento_id ue ON ue.evento_id = b.evento_id
-    ),
-    todos AS (
-      SELECT re.piloto_id, NULL::text AS nome_bruto,
-             SUM(re.pontos_posicao + re.pontos_volta_rapida) AS pontos
-      FROM resultados_evento re
-      JOIN pilotos p ON p.id = re.piloto_id
-      WHERE re.piloto_id IS NOT NULL AND p.oculto = false
-      GROUP BY re.piloto_id
-      UNION ALL
-      SELECT NULL::int, TRIM(re.nome_bruto), SUM(re.pontos_posicao + re.pontos_volta_rapida)
-      FROM resultados_evento re
-      WHERE re.piloto_id IS NULL
-      GROUP BY TRIM(re.nome_bruto)
-    ),
-    ranqueado AS (
-      SELECT *, RANK() OVER (ORDER BY pontos DESC) AS posicao, COUNT(*) OVER () AS total_pilotos
-      FROM todos
+      JOIN eventos e ON e.id = b.evento_id
+      WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
+      ORDER BY e.data_evento DESC, b.horario DESC NULLS LAST, b.id DESC
+      LIMIT 1
     )
-    SELECT ue.evento_id, ue.nome, ue.data_evento, r.pontos, r.posicao, r.total_pilotos
-    FROM ultimo_evento_id ue
-    LEFT JOIN ranqueado r ON r.nome_bruto ILIKE ${nomeBruto}
+    SELECT
+      ub.evento_id, ub.nome, ub.data_evento, ub.posicao,
+      (SELECT COUNT(*) FROM resultados r2 WHERE r2.bateria_id = ub.bateria_id) AS total_pilotos
+    FROM ultima_bateria ub
   `;
 
   const historico = await sql`
