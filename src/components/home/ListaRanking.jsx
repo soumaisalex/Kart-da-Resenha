@@ -9,7 +9,7 @@ export default function ListaRanking({ pilotos }) {
       {pilotos.map((piloto, i) => {
         const destino = piloto.vinculado
           ? `/piloto/${piloto.piloto_id}`
-          : `/reivindicar?nome=${encodeURIComponent(piloto.nome)}`;
+          : `/piloto/nome/${encodeURIComponent(piloto.nome)}`;
 
         return (
           <Link
@@ -32,7 +32,7 @@ export default function ListaRanking({ pilotos }) {
             <span className="flex-1 min-w-0">
               <span className="block font-medium text-checkered text-sm truncate">{piloto.nome}</span>
               {!piloto.vinculado && (
-                <span className="text-[11px] text-asfalto-600">Reivindicar perfil</span>
+                <span className="text-[11px] text-asfalto-600">Sem perfil</span>
               )}
             </span>
             <span className="font-display text-sm text-asfalto-600 shrink-0">

@@ -15,7 +15,7 @@ export default function Podio({ top3 }) {
         const posicao = i + 1;
         const destino = piloto.vinculado
           ? `/piloto/${piloto.piloto_id}`
-          : `/reivindicar?nome=${encodeURIComponent(piloto.nome)}`;
+          : `/piloto/nome/${encodeURIComponent(piloto.nome)}`;
 
         return (
           <Link
@@ -47,7 +47,7 @@ export default function Podio({ top3 }) {
             </p>
             {!piloto.vinculado && (
               <span className="text-[10px] text-asfalto-600 border border-asfalto-600 rounded-full px-2 py-0.5 -mt-1 mb-2">
-                Reivindicar perfil
+                Sem perfil
               </span>
             )}
 

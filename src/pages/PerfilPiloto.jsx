@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2, User, Instagram, Share2, Pencil, ArrowLeft, Clock } from 'lucide-react';
-import { msParaTempo } from '../lib/tempo.js';
-import Evolucao from '../components/perfil/Evolucao.jsx';
+import EstatisticasPiloto from '../components/perfil/EstatisticasPiloto.jsx';
 import EditarPerfilModal from '../components/perfil/EditarPerfilModal.jsx';
 import CartaoCompartilhar from '../components/perfil/CartaoCompartilhar.jsx';
 
@@ -102,36 +101,7 @@ export default function PerfilPiloto() {
         </div>
       </div>
 
-      {/* Estatísticas */}
-      <div className="grid grid-cols-3 gap-3">
-        <Estatistica valor={piloto.stats?.total_corridas ?? 0} label="corridas" />
-        <Estatistica valor={Number(piloto.stats?.pontos_totais ?? 0)} label="pontos" />
-        <Estatistica
-          valor={piloto.stats?.melhor_volta_ms ? msParaTempo(piloto.stats.melhor_volta_ms) : '--'}
-          label="melhor volta"
-        />
-      </div>
-
-      {/* Rankings */}
-      <div className="space-y-2">
-        <h2 className="font-display font-semibold text-checkered">Rankings</h2>
-        <RankingLinha titulo="Geral" ranking={piloto.ranking_geral} />
-        <RankingLinha titulo="Temporada atual" ranking={piloto.ranking_temporada} />
-        {piloto.ultimo_evento && (
-          <RankingLinha
-            titulo={`Última corrida: ${piloto.ultimo_evento.nome || ''}`}
-            ranking={{ posicao: piloto.ultimo_evento.posicao, total_pilotos: piloto.ultimo_evento.total_pilotos }}
-          />
-        )}
-      </div>
-
-      {/* Evolução */}
-      {piloto.historico?.length > 0 && (
-        <div>
-          <h2 className="font-display font-semibold text-checkered mb-2">Evolução</h2>
-          <Evolucao historico={piloto.historico} />
-        </div>
-      )}
+      <EstatisticasPiloto dados={piloto} />
 
       {modalEdicao && (
         <EditarPerfilModal
@@ -148,26 +118,5 @@ export default function PerfilPiloto() {
         <CartaoCompartilhar piloto={piloto} onFechar={() => setModalCompartilhar(false)} />
       )}
     </main>
-  );
-}
-
-function Estatistica({ valor, label }) {
-  return (
-    <div className="bg-asfalto-900 border border-asfalto-700 rounded-lg py-3 text-center">
-      <p className="font-display font-bold text-checkered text-lg">{valor}</p>
-      <p className="text-[11px] uppercase tracking-wide text-asfalto-600">{label}</p>
-    </div>
-  );
-}
-
-function RankingLinha({ titulo, ranking }) {
-  if (!ranking?.posicao) return null;
-  return (
-    <div className="flex items-center justify-between bg-asfalto-900 border border-asfalto-700 rounded-lg px-4 py-2.5">
-      <span className="text-sm text-checkered truncate">{titulo}</span>
-      <span className="font-display font-semibold text-racing shrink-0 ml-3">
-        {ranking.posicao}º <span className="text-asfalto-600 font-normal">de {ranking.total_pilotos}</span>
-      </span>
-    </div>
   );
 }
