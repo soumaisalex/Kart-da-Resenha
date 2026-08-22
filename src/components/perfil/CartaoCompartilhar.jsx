@@ -8,6 +8,10 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState(null);
 
+  // Foto servida pela mesma origem do site (via proxy) — captura de canvas trava com
+  // imagens de outra origem (o bucket R2) sem cabeçalho de CORS configurado.
+  const fotoProxy = piloto.foto_url ? `/api/imagem-proxy?url=${encodeURIComponent(piloto.foto_url)}` : null;
+
   async function compartilhar() {
     setErro(null);
     setGerando(true);
@@ -32,7 +36,9 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
         link.click();
       }
     } catch (e) {
-      if (e.name !== 'AbortError') setErro('Não foi possível gerar a imagem. Tente novamente.');
+      if (e.name !== 'AbortError') {
+        setErro(`Não foi possível gerar a imagem: ${e.message || 'erro desconhecido'}`);
+      }
     } finally {
       setGerando(false);
     }
@@ -60,8 +66,13 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
         </div>
 
         <div className="flex flex-col items-center gap-3 -mt-6">
-          {piloto.foto_url ? (
-            <img src={piloto.foto_url} alt={piloto.nome} className="w-24 h-24 rounded-full object-cover border-4 border-racing" />
+          {fotoProxy ? (
+            <img
+              src={fotoProxy}
+              alt={piloto.nome}
+              crossOrigin="anonymous"
+              className="w-24 h-24 rounded-full object-cover border-4 border-racing"
+            />
           ) : (
             <div className="w-24 h-24 rounded-full bg-asfalto-800 border-4 border-racing flex items-center justify-center">
               <User className="w-10 h-10 text-asfalto-600" />
