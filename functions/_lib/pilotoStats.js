@@ -6,6 +6,10 @@
 // perfil, identificado pelo nome_bruto lido na tabela). Não faz sentido excluir da
 // contagem quem ainda não reivindicou perfil: ele correu, ele conta.
 //
+// Todo lugar que compara ou agrupa por nome_bruto usa TRIM() — o texto lido pela OCR
+// às vezes vem com espaços extras nas pontas, o que faria duas linhas do mesmo piloto
+// virarem grupos diferentes (ou o nome não bater na busca de "/api/pilotos/por-nome").
+//
 // Duas funções de entrada:
 // - obterEstatisticasPiloto: pra quem já tem perfil (piloto_id)
 // - obterEstatisticasNaoVinculado: pra resultados ainda soltos (nome_bruto)
@@ -31,11 +35,11 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
       WHERE p.status = 'aprovado' AND p.oculto = false
       GROUP BY p.id
       UNION ALL
-      SELECT NULL::int AS piloto_id, r.nome_bruto,
+      SELECT NULL::int AS piloto_id, TRIM(r.nome_bruto) AS nome_bruto,
              COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos
       FROM resultados r
       WHERE r.piloto_id IS NULL
-      GROUP BY r.nome_bruto
+      GROUP BY TRIM(r.nome_bruto)
     ),
     ranqueado AS (
       SELECT *, RANK() OVER (ORDER BY pontos DESC) AS posicao, COUNT(*) OVER () AS total_pilotos
@@ -60,11 +64,11 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
       WHERE p.status = 'aprovado' AND p.oculto = false
       GROUP BY p.id
       UNION ALL
-      SELECT NULL::int AS piloto_id, rt.nome_bruto,
+      SELECT NULL::int AS piloto_id, TRIM(rt.nome_bruto) AS nome_bruto,
              COALESCE(SUM(rt.pontos_posicao + rt.pontos_volta_rapida), 0) AS pontos
       FROM resultados_temporada rt
       WHERE rt.piloto_id IS NULL
-      GROUP BY rt.nome_bruto
+      GROUP BY TRIM(rt.nome_bruto)
     ),
     ranqueado AS (
       SELECT *, RANK() OVER (ORDER BY pontos DESC) AS posicao, COUNT(*) OVER () AS total_pilotos
@@ -97,10 +101,10 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
       WHERE re.piloto_id IS NOT NULL AND p.oculto = false
       GROUP BY re.piloto_id
       UNION ALL
-      SELECT NULL::int, re.nome_bruto, SUM(re.pontos_posicao + re.pontos_volta_rapida)
+      SELECT NULL::int, TRIM(re.nome_bruto), SUM(re.pontos_posicao + re.pontos_volta_rapida)
       FROM resultados_evento re
       WHERE re.piloto_id IS NULL
-      GROUP BY re.nome_bruto
+      GROUP BY TRIM(re.nome_bruto)
     ),
     ranqueado AS (
       SELECT *, RANK() OVER (ORDER BY pontos DESC) AS posicao, COUNT(*) OVER () AS total_pilotos
@@ -139,7 +143,7 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
       MIN(r.melhor_volta_ms) AS melhor_volta_ms,
       COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos_totais,
       AVG(r.vel_media) AS vel_media_media
-    FROM resultados r WHERE r.piloto_id IS NULL AND r.nome_bruto ILIKE ${nomeBruto}
+    FROM resultados r WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
   `;
 
   const [rankingGeral] = await sql`
@@ -151,11 +155,11 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
       WHERE p.status = 'aprovado' AND p.oculto = false
       GROUP BY p.id
       UNION ALL
-      SELECT NULL::int AS piloto_id, r.nome_bruto,
+      SELECT NULL::int AS piloto_id, TRIM(r.nome_bruto) AS nome_bruto,
              COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos
       FROM resultados r
       WHERE r.piloto_id IS NULL
-      GROUP BY r.nome_bruto
+      GROUP BY TRIM(r.nome_bruto)
     ),
     ranqueado AS (
       SELECT *, RANK() OVER (ORDER BY pontos DESC) AS posicao, COUNT(*) OVER () AS total_pilotos
@@ -180,11 +184,11 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
       WHERE p.status = 'aprovado' AND p.oculto = false
       GROUP BY p.id
       UNION ALL
-      SELECT NULL::int AS piloto_id, rt.nome_bruto,
+      SELECT NULL::int AS piloto_id, TRIM(rt.nome_bruto) AS nome_bruto,
              COALESCE(SUM(rt.pontos_posicao + rt.pontos_volta_rapida), 0) AS pontos
       FROM resultados_temporada rt
       WHERE rt.piloto_id IS NULL
-      GROUP BY rt.nome_bruto
+      GROUP BY TRIM(rt.nome_bruto)
     ),
     ranqueado AS (
       SELECT *, RANK() OVER (ORDER BY pontos DESC) AS posicao, COUNT(*) OVER () AS total_pilotos
@@ -199,7 +203,7 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
       FROM eventos e
       JOIN baterias b ON b.evento_id = e.id
       JOIN resultados r ON r.bateria_id = b.id
-      WHERE r.piloto_id IS NULL AND r.nome_bruto ILIKE ${nomeBruto}
+      WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
       ORDER BY e.data_evento DESC
       LIMIT 1
     ),
@@ -217,10 +221,10 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
       WHERE re.piloto_id IS NOT NULL AND p.oculto = false
       GROUP BY re.piloto_id
       UNION ALL
-      SELECT NULL::int, re.nome_bruto, SUM(re.pontos_posicao + re.pontos_volta_rapida)
+      SELECT NULL::int, TRIM(re.nome_bruto), SUM(re.pontos_posicao + re.pontos_volta_rapida)
       FROM resultados_evento re
       WHERE re.piloto_id IS NULL
-      GROUP BY re.nome_bruto
+      GROUP BY TRIM(re.nome_bruto)
     ),
     ranqueado AS (
       SELECT *, RANK() OVER (ORDER BY pontos DESC) AS posicao, COUNT(*) OVER () AS total_pilotos
@@ -239,7 +243,7 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
     FROM resultados r
     JOIN baterias b ON b.id = r.bateria_id
     JOIN eventos e ON e.id = b.evento_id
-    WHERE r.piloto_id IS NULL AND r.nome_bruto ILIKE ${nomeBruto}
+    WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
     ORDER BY e.data_evento ASC, b.horario ASC NULLS LAST, b.id ASC
   `;
 

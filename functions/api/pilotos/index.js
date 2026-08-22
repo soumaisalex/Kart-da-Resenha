@@ -45,7 +45,7 @@ export async function onRequestPost(context) {
   await sql`
     UPDATE resultados
     SET piloto_id = ${piloto.id}
-    WHERE piloto_id IS NULL AND nome_bruto ILIKE ${nomeParaVincular}
+    WHERE piloto_id IS NULL AND TRIM(nome_bruto) ILIKE ${nomeParaVincular}
   `;
 
   return Response.json(piloto, { status: 201 });

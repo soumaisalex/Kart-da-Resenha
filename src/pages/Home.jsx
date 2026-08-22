@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Flag } from 'lucide-react';
+import { Loader2, Flag, HelpCircle } from 'lucide-react';
 import Podio from '../components/home/Podio.jsx';
 import DestaqueVoltaRapida from '../components/home/DestaqueVoltaRapida.jsx';
 import ListaRanking from '../components/home/ListaRanking.jsx';
 import AgendaEventos from '../components/home/AgendaEventos.jsx';
 import ListaEventos from '../components/home/ListaEventos.jsx';
+import ModalPontuacao from '../components/home/ModalPontuacao.jsx';
 
 export default function Home() {
   const [ranking, setRanking] = useState(null);
   const [destaque, setDestaque] = useState(null);
   const [eventos, setEventos] = useState(null);
+  const [modalPontuacao, setModalPontuacao] = useState(false);
 
   useEffect(() => {
     fetch('/api/ranking').then((r) => r.json()).then(setRanking).catch(() => setRanking([]));
@@ -51,6 +53,14 @@ export default function Home() {
       {top3.length > 0 ? (
         <section>
           <Podio top3={top3} />
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => setModalPontuacao(true)}
+              className="flex items-center gap-1 text-xs text-asfalto-600 hover:text-racing"
+            >
+              <HelpCircle className="w-3.5 h-3.5" /> Como funciona a pontuação?
+            </button>
+          </div>
         </section>
       ) : (
         <p className="text-center text-asfalto-600">
@@ -90,6 +100,8 @@ export default function Home() {
           Correu com a gente e não tem perfil? Reivindicar meu perfil
         </Link>
       </footer>
+
+      {modalPontuacao && <ModalPontuacao onFechar={() => setModalPontuacao(false)} />}
     </main>
   );
 }

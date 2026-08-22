@@ -14,13 +14,13 @@ export async function onRequestGet(context) {
 
   const naoVinculados = await sql`
     SELECT
-      r.nome_bruto AS nome,
+      TRIM(r.nome_bruto) AS nome,
       COUNT(DISTINCT r.bateria_id) AS total_corridas,
       COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos_totais,
       MIN(r.melhor_volta_ms) AS melhor_volta_ms_historico
     FROM resultados r
     WHERE r.piloto_id IS NULL
-    GROUP BY r.nome_bruto
+    GROUP BY TRIM(r.nome_bruto)
   `;
 
   const ranking = [
