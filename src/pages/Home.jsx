@@ -14,6 +14,86 @@ export default function Home() {
   const [eventos, setEventos] = useState(null);
   const [modalPontuacao, setModalPontuacao] = useState(false);
 
+  
+  // AQUI INICIA O TESTE
+  
+// Exemplo de como montar o link com os dados do piloto logado
+const montarUrlCalendly = (piloto) => {
+  const baseUrl = "https://calendly.com/piquetkartaracaju/reservar-horario-piquet-kart/2026-08-23T19:00:00-03:00";
+  
+  const params = new URLSearchParams({
+    month: "2026-08",
+    date: "2026-08-23",
+    name: piloto?.nome || "",
+    email: piloto?.email || "",
+    // 'a1', 'a2', etc. correspondem às perguntas personalizadas do formulário
+    a1: piloto?.telefone || "", 
+    a2: piloto?.data_nascimento || "" 
+  });
+
+  return `${baseUrl}?${params.toString()}`;
+};
+
+  export function BotaoAgendarCorrida({ pilotoLogado }) {
+  const [modalAberto, setModalAberto] = useState(false);
+
+  // Carrega o script do widget do Calendly dinamicamente
+  useEffect(() => {
+    if (modalAberto) {
+      const script = document.createElement('script');
+      script.src = 'https://assets.calendly.com/assets/external/widget.js';
+      script.async = true;
+      document.body.appendChild(script);
+
+      return () => {
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
+        }
+      };
+    }
+  }, [modalAberto]);
+
+  // Monta a URL passando os dados do piloto logado no banco
+  const urlComDados = `https://calendly.com/piquetkartaracaju/reservar-horario-piquet-kart/2026-08-23T19:00:00-03:00?month=2026-08&date=2026-08-23&name=${encodeURIComponent(pilotoLogado?.nome || '')}&email=${encodeURIComponent(pilotoLogado?.email || '')}&a1=${encodeURIComponent(pilotoLogado?.telefone || '')}`;
+
+  return (
+    <div className="w-full flex justify-center my-4">
+      {/* Botão posicionado na página inicial */}
+      <button
+        onClick={() => setModalAberto(true)}
+        className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors shadow-lg text-sm"
+      >
+        Confirmar participação na próxima corrida
+      </button>
+
+      {/* Modal Iframe sobreposto na tela */}
+      {modalAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-2 sm:p-4">
+          <div className="relative w-full max-w-3xl bg-zinc-900 rounded-xl overflow-hidden shadow-2xl border border-zinc-800">
+            <div className="flex justify-between items-center p-3 border-b border-zinc-800 bg-zinc-950">
+              <span className="text-sm font-semibold text-zinc-300">Reserva de Horário - Kart</span>
+              <button
+                onClick={() => setModalAberto(false)}
+                className="text-zinc-400 hover:text-white font-bold px-2 text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="h-[600px] w-full">
+              <div
+                className="calendly-inline-widget w-full h-full"
+                data-url={urlComDados}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+  // AQUI ENCERRA O TESTE
+  
   useEffect(() => {
     fetch('/api/ranking').then((r) => r.json()).then(setRanking).catch(() => setRanking([]));
     fetch('/api/eventos/ultima-corrida')
