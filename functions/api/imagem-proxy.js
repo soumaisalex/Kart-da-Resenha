@@ -22,7 +22,12 @@ export async function onRequestGet(context) {
     return new Response('Não foi possível buscar a imagem', { status: 502 });
   }
 
-  const headers = new Headers(respOrigem.headers);
+  // Copia só o Content-Type — copiar TODOS os cabeçalhos da origem (Content-Length,
+  // Content-Encoding etc.) causa corrupção aqui, porque o runtime do Cloudflare
+  // pode re-transmitir/recomprimir o corpo e esses cabeçalhos ficam desalinhados
+  // com o que realmente está sendo enviado.
+  const headers = new Headers();
+  headers.set('Content-Type', respOrigem.headers.get('Content-Type') || 'application/octet-stream');
   headers.set('Access-Control-Allow-Origin', '*');
   headers.set('Cache-Control', 'public, max-age=86400');
 
