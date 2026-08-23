@@ -1,16 +1,18 @@
 import { useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import { X, Share2, Loader2, Trophy, Zap, User } from 'lucide-react';
+import { X, Share2, Loader2, Trophy, User } from 'lucide-react';
 import { msParaTempo } from '../../lib/tempo.js';
 
 export default function CartaoCompartilhar({ piloto, onFechar }) {
   const cartaoRef = useRef(null);
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState(null);
+  const [fotoFalhou, setFotoFalhou] = useState(false);
 
   // Foto servida pela mesma origem do site (via proxy) — captura de canvas trava com
   // imagens de outra origem (o bucket R2) sem cabeçalho de CORS configurado.
   const fotoProxy = piloto.foto_url ? `/api/imagem-proxy?url=${encodeURIComponent(piloto.foto_url)}` : null;
+  const mostrarFoto = fotoProxy && !fotoFalhou;
 
   async function compartilhar() {
     setErro(null);
@@ -57,10 +59,17 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
         <X className="w-6 h-6" />
       </button>
 
-      {/* Card capturado pixel a pixel pela função de compartilhar */}
+      {/*
+        Card capturado pixel a pixel pela função de compartilhar.
+        Layout de propósito SEM flexbox pra empilhar o conteúdo (flex-grow dentro de
+        container com aspect-ratio não renderiza de forma confiável na captura via
+        html-to-image — é uma limitação conhecida da lib). Altura fixa em pixels +
+        margem simples entre blocos + estatísticas fixadas no rodapé por posição
+        absoluta, desacopladas da altura do nome (que pode quebrar em 2 linhas).
+      */}
       <div
         ref={cartaoRef}
-        className="w-72 aspect-[9/16] rounded-2xl overflow-hidden relative flex flex-col
+        className="w-72 h-[512px] rounded-2xl overflow-hidden relative
                    bg-gradient-to-b from-asfalto-900 to-asfalto-950 border border-asfalto-700"
       >
         <div className="absolute inset-x-0 top-0 h-2 bg-[repeating-linear-gradient(90deg,#ff3b30_0_10px,#f5f5f0_10px_20px)]" />
@@ -70,26 +79,26 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
           <span className="font-display font-semibold text-checkered text-sm tracking-wide">KART DA RESENHA</span>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
-          {fotoProxy ? (
+        <div className="px-6 mt-16 text-center">
+          {mostrarFoto ? (
             <img
               src={fotoProxy}
               alt={piloto.nome}
-              crossOrigin="anonymous"
-              className="w-24 h-24 rounded-full object-cover border-4 border-racing"
+              onError={() => setFotoFalhou(true)}
+              className="w-24 h-24 rounded-full object-cover border-4 border-racing mx-auto"
             />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-asfalto-800 border-4 border-racing flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-asfalto-800 border-4 border-racing flex items-center justify-center mx-auto">
               <User className="w-10 h-10 text-asfalto-600" />
             </div>
           )}
-          <p className="font-display font-bold text-2xl text-checkered leading-tight">{piloto.nome}</p>
+          <p className="font-display font-bold text-2xl text-checkered leading-tight mt-4">{piloto.nome}</p>
           {posicaoGeral && (
-            <p className="text-racing font-display font-semibold text-sm">{posicaoGeral}º no ranking geral</p>
+            <p className="text-racing font-display font-semibold text-sm mt-2">{posicaoGeral}º no ranking geral</p>
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-center px-6 pb-6">
+        <div className="absolute bottom-6 left-6 right-6 grid grid-cols-3 gap-2 text-center">
           <Estatistica valor={piloto.stats?.total_corridas ?? 0} label="corridas" />
           <Estatistica valor={Number(piloto.stats?.pontos_totais ?? 0)} label="pontos" />
           <Estatistica
