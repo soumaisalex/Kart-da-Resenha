@@ -1,4 +1,5 @@
 import { msParaTempo } from '../../lib/tempo.js';
+import HistoricoCorridas from './HistoricoCorridas.jsx';
 import GraficoEvolucao from './GraficoEvolucao.jsx';
 
 export default function EstatisticasPiloto({ dados }) {
@@ -28,6 +29,8 @@ export default function EstatisticasPiloto({ dados }) {
           />
         )}
       </div>
+
+      {dados.historico?.length > 0 && <HistoricoCorridas historico={dados.historico} />}
 
       {dados.historico?.length > 0 && (
         <div>

@@ -23,6 +23,16 @@ export function formatarDataAbrev(data) {
   });
 }
 
+export function formatarDataNumerica(data) {
+  if (!data) return '';
+  return new Date(data).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC'
+  });
+}
+
 export function formatarDataCurta(data) {
   if (!data) return '';
   return new Date(data).toLocaleDateString('pt-BR', {

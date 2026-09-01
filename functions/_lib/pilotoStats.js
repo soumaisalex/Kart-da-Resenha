@@ -100,7 +100,7 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
   const historico = await sql`
     SELECT
       e.id AS evento_id, e.nome AS evento_nome, e.data_evento, b.descricao AS bateria_descricao,
-      r.posicao, (r.pontos_posicao + r.pontos_volta_rapida) AS pontos,
+      r.posicao, r.pontos_posicao, r.pontos_volta_rapida,
       r.melhor_volta_ms, r.tempo_total_ms, r.total_voltas, r.vel_media
     FROM resultados r
     JOIN baterias b ON b.id = r.bateria_id
@@ -198,7 +198,7 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
   const historico = await sql`
     SELECT
       e.id AS evento_id, e.nome AS evento_nome, e.data_evento, b.descricao AS bateria_descricao,
-      r.posicao, (r.pontos_posicao + r.pontos_volta_rapida) AS pontos,
+      r.posicao, r.pontos_posicao, r.pontos_volta_rapida,
       r.melhor_volta_ms, r.tempo_total_ms, r.total_voltas, r.vel_media
     FROM resultados r
     JOIN baterias b ON b.id = r.bateria_id
