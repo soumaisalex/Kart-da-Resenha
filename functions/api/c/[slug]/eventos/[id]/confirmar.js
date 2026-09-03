@@ -1,18 +1,22 @@
-import { getDb } from '../../../_lib/db.js';
-import { validarIdadeMinima } from '../../../_lib/pontuacao.js';
+import { getDb } from '../../../../../_lib/db.js';
+import { validarIdadeMinima } from '../../../../../_lib/pontuacao.js';
+import { exigirCampeonato } from '../../../../../_lib/campeonato.js';
 
-// POST /api/eventos/:id/confirmar
+// POST /api/c/:slug/eventos/:id/confirmar
 // body: { piloto_id, data_nascimento? }
-// Regras:
-// - só piloto com status = 'aprovado' pode confirmar
-// - se o piloto ainda não tem data_nascimento salva, é obrigatória agora; valida idade mínima
 export async function onRequestPost(context) {
   const sql = getDb(context.env);
+  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  if (negado) return negado;
+
   const { id: eventoId } = context.params;
   const { piloto_id, data_nascimento } = await context.request.json();
 
+  const [evento] = await sql`SELECT id FROM eventos WHERE id = ${eventoId} AND campeonato_id = ${campeonato.id}`;
+  if (!evento) return Response.json({ erro: 'Evento não encontrado' }, { status: 404 });
+
   const [piloto] = await sql`
-    SELECT status, data_nascimento, campeonato_id FROM pilotos WHERE id = ${piloto_id}
+    SELECT status, data_nascimento FROM pilotos WHERE id = ${piloto_id} AND campeonato_id = ${campeonato.id}
   `;
   if (!piloto) return Response.json({ erro: 'Piloto não encontrado' }, { status: 404 });
   if (piloto.status !== 'aprovado') {
@@ -27,12 +31,11 @@ export async function onRequestPost(context) {
     dataParaValidar = data_nascimento;
   }
 
-  const { valido, idade, idadeMinima } = await validarIdadeMinima(sql, piloto.campeonato_id, dataParaValidar);
+  const { valido, idade, idadeMinima } = await validarIdadeMinima(sql, campeonato.id, dataParaValidar);
   if (!valido) {
     return Response.json({ erro: `Idade mínima de ${idadeMinima} anos (idade informada: ${idade})` }, { status: 403 });
   }
 
-  // Salva data de nascimento no perfil se ainda não tinha
   if (!piloto.data_nascimento) {
     await sql`UPDATE pilotos SET data_nascimento = ${data_nascimento} WHERE id = ${piloto_id}`;
   }

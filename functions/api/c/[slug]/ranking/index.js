@@ -1,14 +1,15 @@
-import { getDb } from '../../_lib/db.js';
-import { obterCampeonatoPorSlug } from '../../_lib/campeonato.js';
+import { getDb } from '../../../../_lib/db.js';
+import { exigirCampeonato } from '../../../../_lib/campeonato.js';
 
-const SLUG_LEGADO = 'kart-da-resenha';
-
-// GET /api/ranking -> classificação geral do campeonato legado
+// GET /api/c/:slug/ranking -> classificação geral do campeonato
 export async function onRequestGet(context) {
   const sql = getDb(context.env);
-  const campeonato = await obterCampeonatoPorSlug(sql, SLUG_LEGADO);
+  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  if (negado) return negado;
 
-  const vinculados = await sql`SELECT * FROM vw_ranking_geral WHERE campeonato_id = ${campeonato.id}`;
+  const vinculados = await sql`
+    SELECT * FROM vw_ranking_geral WHERE campeonato_id = ${campeonato.id}
+  `;
 
   const naoVinculados = await sql`
     SELECT

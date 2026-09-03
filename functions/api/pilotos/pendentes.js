@@ -1,6 +1,9 @@
 import { getDb } from '../../_lib/db.js';
 import { exigirAdmin } from '../../_lib/auth.js';
 import { removerPilotoEDesvincular } from '../../_lib/pilotoRemocao.js';
+import { obterCampeonatoPorSlug } from '../../_lib/campeonato.js';
+
+const SLUG_LEGADO = 'kart-da-resenha';
 
 // GET /api/pilotos/pendentes -> fila de aprovação (área admin)
 export async function onRequestGet(context) {
@@ -8,10 +11,11 @@ export async function onRequestGet(context) {
   if (negado) return negado;
 
   const sql = getDb(context.env);
+  const campeonato = await obterCampeonatoPorSlug(sql, SLUG_LEGADO);
   const pendentes = await sql`
     SELECT id, nome, telefone, email, instagram, foto_url, criado_em
     FROM pilotos
-    WHERE status = 'pendente'
+    WHERE campeonato_id = ${campeonato.id} AND status = 'pendente'
     ORDER BY criado_em ASC
   `;
   return Response.json(pendentes);

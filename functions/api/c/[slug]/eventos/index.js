@@ -1,15 +1,13 @@
-import { getDb } from '../../_lib/db.js';
-import { exigirAdmin } from '../../_lib/auth.js';
-import { obterCampeonatoPorSlug } from '../../_lib/campeonato.js';
+import { getDb } from '../../../../_lib/db.js';
+import { exigirAdmin } from '../../../../_lib/auth.js';
+import { exigirCampeonato } from '../../../../_lib/campeonato.js';
 
-// TODO: endpoint legado (pré multi-campeonato) — remover quando o frontend migrar
-// de vez pra /api/c/:slug/eventos. Por enquanto sempre opera no campeonato original.
-const SLUG_LEGADO = 'kart-da-resenha';
-
-// GET /api/eventos -> agenda completa (passados + futuros), usada na Home e na Admin
+// GET /api/c/:slug/eventos -> agenda completa (passados + futuros)
 export async function onRequestGet(context) {
   const sql = getDb(context.env);
-  const campeonato = await obterCampeonatoPorSlug(sql, SLUG_LEGADO);
+  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  if (negado) return negado;
+
   const eventos = await sql`
     SELECT id, nome, data_evento, local, tipo, arquivo_original_url
     FROM eventos
@@ -19,14 +17,16 @@ export async function onRequestGet(context) {
   return Response.json(eventos);
 }
 
-// POST /api/eventos -> criar evento futuro (área admin)
+// POST /api/c/:slug/eventos -> criar evento futuro (área admin)
 // body: { nome, data_evento, local }
 export async function onRequestPost(context) {
-  const negado = await exigirAdmin(context);
-  if (negado) return negado;
+  const negado1 = await exigirAdmin(context);
+  if (negado1) return negado1;
 
   const sql = getDb(context.env);
-  const campeonato = await obterCampeonatoPorSlug(sql, SLUG_LEGADO);
+  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  if (negado) return negado;
+
   const body = await context.request.json();
 
   if (!body.data_evento) {

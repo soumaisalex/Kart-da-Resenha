@@ -2,21 +2,20 @@
 // conceito de temporada separado no schema (corridas são esporádicas, intervalo grande).
 //
 // IMPORTANTE: os rankings (geral, temporada, último evento) contam TODO MUNDO que já
-// correu — piloto com perfil vinculado e aprovado, OU resultado ainda "solto" (sem
-// perfil, identificado pelo nome_bruto lido na tabela). Não faz sentido excluir da
-// contagem quem ainda não reivindicou perfil: ele correu, ele conta.
+// correu NAQUELE CAMPEONATO — piloto com perfil vinculado e aprovado, OU resultado
+// ainda "solto" (sem perfil, identificado pelo nome_bruto). Cada campeonato tem seu
+// próprio ranking, totalmente isolado dos outros — por isso todo cálculo aqui recebe
+// um campeonatoId e filtra por ele.
 //
 // Todo lugar que compara ou agrupa por nome_bruto usa TRIM() — o texto lido pela OCR
-// às vezes vem com espaços extras nas pontas, o que faria duas linhas do mesmo piloto
-// virarem grupos diferentes (ou o nome não bater na busca de "/api/pilotos/por-nome").
+// às vezes vem com espaços extras nas pontas.
 //
 // Duas funções de entrada:
 // - obterEstatisticasPiloto: pra quem já tem perfil (piloto_id)
 // - obterEstatisticasNaoVinculado: pra resultados ainda soltos (nome_bruto)
-// Ambas devolvem exatamente o mesmo formato de dados, pra reaproveitar os mesmos
-// componentes de exibição (estatísticas, rankings, gráfico de evolução) nos dois casos.
+// Ambas devolvem exatamente o mesmo formato de dados.
 
-export async function obterEstatisticasPiloto(sql, pilotoId) {
+export async function obterEstatisticasPiloto(sql, campeonatoId, pilotoId) {
   const [stats] = await sql`
     SELECT
       COUNT(DISTINCT r.bateria_id) AS total_corridas,
@@ -32,13 +31,15 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
              COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados r ON r.piloto_id = p.id
-      WHERE p.status = 'aprovado' AND p.oculto = false
+      WHERE p.status = 'aprovado' AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
       GROUP BY p.id
       UNION ALL
       SELECT NULL::int AS piloto_id, TRIM(r.nome_bruto) AS nome_bruto,
              COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos
       FROM resultados r
-      WHERE r.piloto_id IS NULL
+      JOIN baterias b ON b.id = r.bateria_id
+      JOIN eventos e ON e.id = b.evento_id
+      WHERE r.piloto_id IS NULL AND e.campeonato_id = ${campeonatoId}
       GROUP BY TRIM(r.nome_bruto)
     ),
     ranqueado AS (
@@ -54,14 +55,15 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
       FROM resultados r
       JOIN baterias b ON b.id = r.bateria_id
       JOIN eventos e ON e.id = b.evento_id
-      WHERE EXTRACT(YEAR FROM e.data_evento) = EXTRACT(YEAR FROM now())
+      WHERE e.campeonato_id = ${campeonatoId}
+        AND EXTRACT(YEAR FROM e.data_evento) = EXTRACT(YEAR FROM now())
     ),
     todos AS (
       SELECT p.id AS piloto_id, NULL::text AS nome_bruto,
              COALESCE(SUM(rt.pontos_posicao + rt.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados_temporada rt ON rt.piloto_id = p.id
-      WHERE p.status = 'aprovado' AND p.oculto = false
+      WHERE p.status = 'aprovado' AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
       GROUP BY p.id
       UNION ALL
       SELECT NULL::int AS piloto_id, TRIM(rt.nome_bruto) AS nome_bruto,
@@ -78,16 +80,15 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
   `;
 
   // "Última corrida" mostra a posição LITERAL de chegada naquela bateria específica —
-  // de propósito NÃO é um rank calculado por pontos, porque o bônus de volta mais rápida
-  // pode inflar a pontuação de alguém sem mudar sua posição real no pódio daquela corrida
-  // (ex: 3º colocado que fez a volta mais rápida não deve aparecer como "2º" por causa disso).
+  // de propósito NÃO é um rank calculado por pontos (o bônus de volta mais rápida não
+  // deve mudar a posição real de pódio exibida aqui).
   const [ultimoEvento] = await sql`
     WITH ultima_bateria AS (
       SELECT b.id AS bateria_id, e.id AS evento_id, e.nome, e.data_evento, r.posicao
       FROM resultados r
       JOIN baterias b ON b.id = r.bateria_id
       JOIN eventos e ON e.id = b.evento_id
-      WHERE r.piloto_id = ${pilotoId}
+      WHERE r.piloto_id = ${pilotoId} AND e.campeonato_id = ${campeonatoId}
       ORDER BY e.data_evento DESC, b.horario DESC NULLS LAST, b.id DESC
       LIMIT 1
     )
@@ -105,7 +106,7 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
     FROM resultados r
     JOIN baterias b ON b.id = r.bateria_id
     JOIN eventos e ON e.id = b.evento_id
-    WHERE r.piloto_id = ${pilotoId}
+    WHERE r.piloto_id = ${pilotoId} AND e.campeonato_id = ${campeonatoId}
     ORDER BY e.data_evento ASC, b.horario ASC NULLS LAST, b.id ASC
   `;
 
@@ -118,14 +119,17 @@ export async function obterEstatisticasPiloto(sql, pilotoId) {
   };
 }
 
-export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
+export async function obterEstatisticasNaoVinculado(sql, campeonatoId, nomeBruto) {
   const [stats] = await sql`
     SELECT
       COUNT(DISTINCT r.bateria_id) AS total_corridas,
       MIN(r.melhor_volta_ms) AS melhor_volta_ms,
       COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos_totais,
       AVG(r.vel_media) AS vel_media_media
-    FROM resultados r WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
+    FROM resultados r
+    JOIN baterias b ON b.id = r.bateria_id
+    JOIN eventos e ON e.id = b.evento_id
+    WHERE r.piloto_id IS NULL AND e.campeonato_id = ${campeonatoId} AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
   `;
 
   const [rankingGeral] = await sql`
@@ -134,13 +138,15 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
              COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados r ON r.piloto_id = p.id
-      WHERE p.status = 'aprovado' AND p.oculto = false
+      WHERE p.status = 'aprovado' AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
       GROUP BY p.id
       UNION ALL
       SELECT NULL::int AS piloto_id, TRIM(r.nome_bruto) AS nome_bruto,
              COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos
       FROM resultados r
-      WHERE r.piloto_id IS NULL
+      JOIN baterias b ON b.id = r.bateria_id
+      JOIN eventos e ON e.id = b.evento_id
+      WHERE r.piloto_id IS NULL AND e.campeonato_id = ${campeonatoId}
       GROUP BY TRIM(r.nome_bruto)
     ),
     ranqueado AS (
@@ -156,14 +162,15 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
       FROM resultados r
       JOIN baterias b ON b.id = r.bateria_id
       JOIN eventos e ON e.id = b.evento_id
-      WHERE EXTRACT(YEAR FROM e.data_evento) = EXTRACT(YEAR FROM now())
+      WHERE e.campeonato_id = ${campeonatoId}
+        AND EXTRACT(YEAR FROM e.data_evento) = EXTRACT(YEAR FROM now())
     ),
     todos AS (
       SELECT p.id AS piloto_id, NULL::text AS nome_bruto,
              COALESCE(SUM(rt.pontos_posicao + rt.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados_temporada rt ON rt.piloto_id = p.id
-      WHERE p.status = 'aprovado' AND p.oculto = false
+      WHERE p.status = 'aprovado' AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
       GROUP BY p.id
       UNION ALL
       SELECT NULL::int AS piloto_id, TRIM(rt.nome_bruto) AS nome_bruto,
@@ -185,7 +192,7 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
       FROM resultados r
       JOIN baterias b ON b.id = r.bateria_id
       JOIN eventos e ON e.id = b.evento_id
-      WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
+      WHERE r.piloto_id IS NULL AND e.campeonato_id = ${campeonatoId} AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
       ORDER BY e.data_evento DESC, b.horario DESC NULLS LAST, b.id DESC
       LIMIT 1
     )
@@ -203,7 +210,7 @@ export async function obterEstatisticasNaoVinculado(sql, nomeBruto) {
     FROM resultados r
     JOIN baterias b ON b.id = r.bateria_id
     JOIN eventos e ON e.id = b.evento_id
-    WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
+    WHERE r.piloto_id IS NULL AND e.campeonato_id = ${campeonatoId} AND TRIM(r.nome_bruto) ILIKE ${nomeBruto}
     ORDER BY e.data_evento ASC, b.horario ASC NULLS LAST, b.id ASC
   `;
 

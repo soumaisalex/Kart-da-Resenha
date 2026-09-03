@@ -1,5 +1,8 @@
 import { getDb } from '../../_lib/db.js';
 import { exigirAdmin } from '../../_lib/auth.js';
+import { obterCampeonatoPorSlug } from '../../_lib/campeonato.js';
+
+const SLUG_LEGADO = 'kart-da-resenha';
 
 // GET /api/pilotos/gerenciar -> todos os pilotos aprovados, incluindo os ocultos (só admin)
 export async function onRequestGet(context) {
@@ -7,10 +10,11 @@ export async function onRequestGet(context) {
   if (negado) return negado;
 
   const sql = getDb(context.env);
+  const campeonato = await obterCampeonatoPorSlug(sql, SLUG_LEGADO);
   const pilotos = await sql`
     SELECT id, nome, foto_url, email, telefone, instagram, oculto
     FROM pilotos
-    WHERE status = 'aprovado'
+    WHERE campeonato_id = ${campeonato.id} AND status = 'aprovado'
     ORDER BY nome
   `;
   return Response.json(pilotos);

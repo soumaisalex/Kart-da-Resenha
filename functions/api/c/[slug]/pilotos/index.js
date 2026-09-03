@@ -1,14 +1,12 @@
-import { getDb } from '../../_lib/db.js';
-import { obterCampeonatoPorSlug } from '../../_lib/campeonato.js';
+import { getDb } from '../../../../_lib/db.js';
+import { exigirCampeonato } from '../../../../_lib/campeonato.js';
 
-// TODO: endpoint legado (pré multi-campeonato) — remover quando o frontend migrar
-// de vez pra /api/c/:slug/pilotos. Por enquanto sempre opera no campeonato original.
-const SLUG_LEGADO = 'kart-da-resenha';
-
-// GET /api/pilotos -> lista pilotos aprovados (para ranking, listas públicas)
+// GET /api/c/:slug/pilotos -> lista pilotos aprovados (para ranking, listas públicas)
 export async function onRequestGet(context) {
   const sql = getDb(context.env);
-  const campeonato = await obterCampeonatoPorSlug(sql, SLUG_LEGADO);
+  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  if (negado) return negado;
+
   const pilotos = await sql`
     SELECT id, nome, foto_url, instagram
     FROM pilotos
@@ -18,16 +16,17 @@ export async function onRequestGet(context) {
   return Response.json(pilotos);
 }
 
-// POST /api/pilotos -> reivindicar perfil
-// body: { nome, telefone?, email?, instagram?, foto_url?, vincular_nome_bruto? }
+// POST /api/c/:slug/pilotos -> reivindicar perfil
+// body: { nome, telefone, email?, instagram?, foto_url?, vincular_nome_bruto? }
 // - nome: nome de exibição escolhido livremente pela pessoa (não precisa bater com nada)
 // - vincular_nome_bruto: nome exatamente como veio da leitura da tabela (nome_bruto),
-//   usado só pra encontrar e vincular o resultado correspondente — vem preenchido quando
-//   a pessoa clica em "Reivindicar" a partir de um resultado específico no ranking.
+//   usado só pra encontrar e vincular o resultado correspondente.
 // Sempre entra como status = 'pendente' — aprovação manual na área admin.
 export async function onRequestPost(context) {
   const sql = getDb(context.env);
-  const campeonato = await obterCampeonatoPorSlug(sql, SLUG_LEGADO);
+  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  if (negado) return negado;
+
   const body = await context.request.json();
 
   if (!body.nome || !body.nome.trim()) {
@@ -44,10 +43,8 @@ export async function onRequestPost(context) {
     RETURNING id, nome, status
   `;
 
-  // Vincula resultados já importados, ainda sem perfil, cujo nome_bruto bate com o nome
-  // original do resultado que a pessoa clicou (vincular_nome_bruto) — ou, na ausência
-  // disso (reivindicação feita direto, sem vir de um resultado específico), tenta pelo
-  // próprio nome de exibição digitado, como melhor esforço.
+  // Vincula resultados já importados, ainda sem perfil, dentro do mesmo campeonato, cujo
+  // nome_bruto bate com o nome original do resultado que a pessoa clicou.
   const nomeParaVincular = (body.vincular_nome_bruto || body.nome).trim();
   await sql`
     UPDATE resultados r

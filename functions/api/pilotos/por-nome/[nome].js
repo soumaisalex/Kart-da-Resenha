@@ -16,7 +16,12 @@ export async function onRequestGet(context) {
   }
 
   const [existeNaoVinculado] = await sql`
-    SELECT 1 FROM resultados WHERE piloto_id IS NULL AND TRIM(nome_bruto) ILIKE ${nome} LIMIT 1
+    SELECT e.campeonato_id
+    FROM resultados r
+    JOIN baterias b ON b.id = r.bateria_id
+    JOIN eventos e ON e.id = b.evento_id
+    WHERE r.piloto_id IS NULL AND TRIM(r.nome_bruto) ILIKE ${nome}
+    LIMIT 1
   `;
 
   if (!existeNaoVinculado) {
@@ -29,6 +34,6 @@ export async function onRequestGet(context) {
     return Response.json({ erro: 'Nenhum resultado encontrado com esse nome.' }, { status: 404 });
   }
 
-  const estatisticas = await obterEstatisticasNaoVinculado(sql, nome);
+  const estatisticas = await obterEstatisticasNaoVinculado(sql, existeNaoVinculado.campeonato_id, nome);
   return Response.json({ nome, ...estatisticas });
 }

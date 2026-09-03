@@ -1,27 +1,30 @@
-import { getDb } from '../../_lib/db.js';
-import { calcularPontos } from '../../_lib/pontuacao.js';
-import { exigirAdmin } from '../../_lib/auth.js';
-import { obterCampeonatoPorSlug } from '../../_lib/campeonato.js';
+import { getDb } from '../../../../_lib/db.js';
+import { calcularPontos } from '../../../../_lib/pontuacao.js';
+import { exigirAdmin } from '../../../../_lib/auth.js';
+import { exigirCampeonato } from '../../../../_lib/campeonato.js';
 
-// TODO: endpoint legado (pré multi-campeonato) — remover quando o frontend migrar
-// de vez pra /api/c/:slug/resultados/importar. Por enquanto sempre opera no campeonato original.
-const SLUG_LEGADO = 'kart-da-resenha';
-
-// POST /api/resultados/importar
+// POST /api/c/:slug/resultados/importar
+// body:
+// {
+//   evento: { id?, nome, data_evento, local, arquivo_original_url },
+//   bateria: { descricao, horario },
+//   resultados: [ { nome_bruto, piloto_id?, posicao, numero_kart, melhor_volta_ms, tempo_total_ms, gap_texto, total_voltas, vel_media } ]
+// }
 export async function onRequestPost(context) {
-  const negado = await exigirAdmin(context);
-  if (negado) return negado;
+  const negado1 = await exigirAdmin(context);
+  if (negado1) return negado1;
 
   const sql = getDb(context.env);
-  const campeonato = await obterCampeonatoPorSlug(sql, SLUG_LEGADO);
-  const body = await context.request.json();
+  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  if (negado) return negado;
 
+  const body = await context.request.json();
   const { evento, bateria, resultados } = body;
   if (!resultados || !resultados.length) {
     return Response.json({ erro: 'Nenhum resultado para importar' }, { status: 400 });
   }
 
-  // 1. Evento (novo ou existente, sempre marcado como 'passado' — já tem resultado)
+  // 1. Evento (novo ou existente dentro do mesmo campeonato, sempre marcado como 'passado')
   let eventoId = evento.id;
   if (!eventoId) {
     const [novoEvento] = await sql`
@@ -31,10 +34,12 @@ export async function onRequestPost(context) {
     `;
     eventoId = novoEvento.id;
   } else {
-    await sql`
+    const [existente] = await sql`
       UPDATE eventos SET tipo = 'passado', arquivo_original_url = COALESCE(${evento.arquivo_original_url}, arquivo_original_url)
       WHERE id = ${eventoId} AND campeonato_id = ${campeonato.id}
+      RETURNING id
     `;
+    if (!existente) return Response.json({ erro: 'Evento não encontrado neste campeonato' }, { status: 404 });
   }
 
   // 2. Bateria
@@ -45,11 +50,11 @@ export async function onRequestPost(context) {
   `;
   const bateriaId = novaBateria.id;
 
-  // 3. Descobre quem fez a volta mais rápida da bateria (menor melhor_volta_ms, ignorando nulos)
-  const tempos = resultados.map(r => r.melhor_volta_ms).filter(t => t != null);
+  // 3. Descobre quem fez a volta mais rápida da bateria
+  const tempos = resultados.map((r) => r.melhor_volta_ms).filter((t) => t != null);
   const menorVolta = tempos.length ? Math.min(...tempos) : null;
 
-  // 4. Insere cada resultado já com pontos calculados
+  // 4. Insere cada resultado já com pontos calculados (conforme a config deste campeonato)
   const inseridos = [];
   for (const r of resultados) {
     const ehVoltaMaisRapida = menorVolta != null && r.melhor_volta_ms === menorVolta;
