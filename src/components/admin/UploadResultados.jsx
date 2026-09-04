@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
 import { UploadCloud, Loader2 } from 'lucide-react';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function UploadResultados({ onExtraido }) {
+  const { apiUrl } = useCampeonato();
   const [arrastando, setArrastando] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -16,7 +18,7 @@ export default function UploadResultados({ onExtraido }) {
       const formData = new FormData();
       formData.append('arquivo', arquivo);
 
-      const resp = await fetch('/api/ocr', { method: 'POST', body: formData });
+      const resp = await fetch(apiUrl('/ocr'), { method: 'POST', body: formData });
       const dados = await resp.json();
 
       if (!resp.ok) {

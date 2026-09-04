@@ -7,21 +7,25 @@ import ListaRanking from '../components/home/ListaRanking.jsx';
 import AgendaEventos from '../components/home/AgendaEventos.jsx';
 import ListaEventos from '../components/home/ListaEventos.jsx';
 import ModalPontuacao from '../components/home/ModalPontuacao.jsx';
+import { useCampeonato } from '../context/CampeonatoContext.jsx';
 
 export default function Home() {
+  const { apiUrl, rota } = useCampeonato();
+  const [campeonato, setCampeonato] = useState(null);
   const [ranking, setRanking] = useState(null);
   const [destaque, setDestaque] = useState(null);
   const [eventos, setEventos] = useState(null);
   const [modalPontuacao, setModalPontuacao] = useState(false);
 
   useEffect(() => {
-    fetch('/api/ranking').then((r) => r.json()).then(setRanking).catch(() => setRanking([]));
-    fetch('/api/eventos/ultima-corrida')
+    fetch(apiUrl('')).then((r) => (r.ok ? r.json() : null)).then(setCampeonato).catch(() => setCampeonato(null));
+    fetch(apiUrl('/ranking')).then((r) => r.json()).then(setRanking).catch(() => setRanking([]));
+    fetch(apiUrl('/eventos/ultima-corrida'))
       .then((r) => (r.ok ? r.json() : null))
       .then(setDestaque)
       .catch(() => setDestaque(null));
-    fetch('/api/eventos').then((r) => r.json()).then(setEventos).catch(() => setEventos([]));
-  }, []);
+    fetch(apiUrl('/eventos')).then((r) => r.json()).then(setEventos).catch(() => setEventos([]));
+  }, [apiUrl]);
 
   const carregando = ranking === null || eventos === null;
 
@@ -46,7 +50,7 @@ export default function Home() {
       <header className="flex items-center gap-2 justify-center">
         <Flag className="w-6 h-6 text-racing" />
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-checkered tracking-wide">
-          Kart da Resenha
+          {campeonato?.nome || 'Carregando...'}
         </h1>
       </header>
 
@@ -96,7 +100,7 @@ export default function Home() {
       )}
 
       <footer className="text-center pt-4">
-        <Link to="/reivindicar" className="text-sm text-asfalto-600 hover:text-racing">
+        <Link to={rota('/reivindicar')} className="text-sm text-asfalto-600 hover:text-racing">
           Correu com a gente e não tem perfil? Reivindicar meu perfil
         </Link>
       </footer>

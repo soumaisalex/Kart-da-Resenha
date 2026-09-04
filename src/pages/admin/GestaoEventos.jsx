@@ -4,8 +4,10 @@ import { formatarData } from '../../lib/data.js';
 import { msParaTempo } from '../../lib/tempo.js';
 import EditarEventoModal from './EditarEventoModal.jsx';
 import ConfirmarModal from '../../components/admin/ConfirmarModal.jsx';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function GestaoEventos() {
+  const { apiUrl } = useCampeonato();
   const [eventos, setEventos] = useState(null);
   const [form, setForm] = useState({ nome: '', data_evento: '', local: '' });
   const [criando, setCriando] = useState(false);
@@ -21,7 +23,7 @@ export default function GestaoEventos() {
   }, []);
 
   async function carregar() {
-    const resp = await fetch('/api/eventos');
+    const resp = await fetch(apiUrl('/eventos'));
     setEventos(await resp.json());
   }
 
@@ -34,7 +36,7 @@ export default function GestaoEventos() {
     }
     setCriando(true);
     try {
-      const resp = await fetch('/api/eventos', {
+      const resp = await fetch(apiUrl('/eventos'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
@@ -57,7 +59,7 @@ export default function GestaoEventos() {
     }
     setExpandido(evento.id);
     if (!detalhePorEvento[evento.id]) {
-      const resp = await fetch(`/api/eventos/${evento.id}`);
+      const resp = await fetch(apiUrl(`/eventos/${evento.id}`));
       const dados = await resp.json();
       setDetalhePorEvento((atual) => ({ ...atual, [evento.id]: dados }));
     }
@@ -66,7 +68,7 @@ export default function GestaoEventos() {
   async function excluirEvento(evento) {
     setExcluindo(evento.id);
     try {
-      const resp = await fetch(`/api/eventos/${evento.id}`, { method: 'DELETE' });
+      const resp = await fetch(apiUrl(`/eventos/${evento.id}`), { method: 'DELETE' });
       if (!resp.ok) throw new Error('Não foi possível excluir o evento');
       setEventos((atual) => atual.filter((e) => e.id !== evento.id));
     } catch (e) {

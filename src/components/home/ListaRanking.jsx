@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
 import { User, UserPlus } from 'lucide-react';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function ListaRanking({ pilotos }) {
+  const { rota } = useCampeonato();
   if (!pilotos.length) return null;
 
   return (
     <div className="divide-y divide-asfalto-700 border border-asfalto-700 rounded-xl overflow-hidden">
       {pilotos.map((piloto, i) => {
         const destino = piloto.vinculado
-          ? `/piloto/${piloto.piloto_id}`
-          : `/piloto/nome/${encodeURIComponent(piloto.nome)}`;
+          ? rota(`/piloto/${piloto.piloto_id}`)
+          : rota(`/piloto/nome/${encodeURIComponent(piloto.nome)}`);
 
         return (
           <Link

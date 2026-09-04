@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 import { msParaTempo } from '../../lib/tempo.js';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function DestaqueVoltaRapida({ destaque }) {
+  const { rota } = useCampeonato();
   if (!destaque) return null;
   const nome = destaque.piloto_nome || destaque.nome_bruto;
 
@@ -24,7 +26,7 @@ export default function DestaqueVoltaRapida({ destaque }) {
   );
 
   return destaque.piloto_id ? (
-    <Link to={`/piloto/${destaque.piloto_id}`} className="block hover:opacity-90 transition-opacity">
+    <Link to={rota(`/piloto/${destaque.piloto_id}`)} className="block hover:opacity-90 transition-opacity">
       {conteudo}
     </Link>
   ) : (

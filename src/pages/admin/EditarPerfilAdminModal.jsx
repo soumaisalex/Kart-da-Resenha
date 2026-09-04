@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import FotoUpload from '../../components/FotoUpload.jsx';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function EditarPerfilAdminModal({ piloto, onFechar, onSalvo }) {
+  const { apiUrl } = useCampeonato();
   const [form, setForm] = useState({
     nome: piloto.nome || '',
     email: piloto.email || '',
@@ -21,7 +23,7 @@ export default function EditarPerfilAdminModal({ piloto, onFechar, onSalvo }) {
     setErro(null);
     setEnviando(true);
     try {
-      const resp = await fetch(`/api/pilotos/${piloto.id}`, {
+      const resp = await fetch(apiUrl(`/pilotos/${piloto.id}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)

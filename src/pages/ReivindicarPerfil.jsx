@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Flag, Loader2, CheckCircle2 } from 'lucide-react';
 import FotoUpload from '../components/FotoUpload.jsx';
+import { useCampeonato } from '../context/CampeonatoContext.jsx';
 
 export default function ReivindicarPerfil() {
   const [searchParams] = useSearchParams();
+  const { apiUrl, rota } = useCampeonato();
   const nomeOriginal = searchParams.get('nome') || '';
 
   const [form, setForm] = useState({
@@ -37,7 +39,7 @@ export default function ReivindicarPerfil() {
 
     setEnviando(true);
     try {
-      const resp = await fetch('/api/pilotos', {
+      const resp = await fetch(apiUrl('/pilotos'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, vincular_nome_bruto: nomeOriginal || undefined })
@@ -61,7 +63,7 @@ export default function ReivindicarPerfil() {
           Seu perfil foi enviado pra aprovação. Assim que for aprovado, seus resultados já cadastrados
           (se houver corridas no seu nome) aparecem automaticamente.
         </p>
-        <Link to="/" className="inline-block text-racing hover:text-racing-light text-sm font-medium">
+        <Link to={rota('/')} className="inline-block text-racing hover:text-racing-light text-sm font-medium">
           Voltar pra Home
         </Link>
       </main>

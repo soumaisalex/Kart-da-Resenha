@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function ConfiguracaoPontuacao() {
+  const { apiUrl } = useCampeonato();
   const [posicoes, setPosicoes] = useState(null);
   const [pontosVoltaRapida, setPontosVoltaRapida] = useState(0);
   const [salvando, setSalvando] = useState(false);
@@ -13,7 +15,7 @@ export default function ConfiguracaoPontuacao() {
   }, []);
 
   async function carregar() {
-    const resp = await fetch('/api/config/pontuacao');
+    const resp = await fetch(apiUrl('/config/pontuacao'));
     const dados = await resp.json();
     setPosicoes(dados.posicoes.map((p) => ({ posicao: p.posicao, pontos: Number(p.pontos) })));
     setPontosVoltaRapida(Number(dados.pontos_melhor_volta));
@@ -39,7 +41,7 @@ export default function ConfiguracaoPontuacao() {
     setErro(null);
     setSalvando(true);
     try {
-      const resp = await fetch('/api/config/pontuacao', {
+      const resp = await fetch(apiUrl('/config/pontuacao'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ posicoes, pontos_melhor_volta: pontosVoltaRapida })

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function EditarEventoModal({ evento, onFechar, onSalvo }) {
+  const { apiUrl } = useCampeonato();
   const [form, setForm] = useState({
     nome: evento.nome || '',
     data_evento: evento.data_evento?.slice(0, 10) || '',
@@ -15,7 +17,7 @@ export default function EditarEventoModal({ evento, onFechar, onSalvo }) {
     setErro(null);
     setEnviando(true);
     try {
-      const resp = await fetch(`/api/eventos/${evento.id}`, {
+      const resp = await fetch(apiUrl(`/eventos/${evento.id}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)

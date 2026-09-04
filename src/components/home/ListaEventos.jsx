@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Download, MapPin, Calendar, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatarDataAbrev } from '../../lib/data.js';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function ListaEventos({ eventos }) {
+  const { apiUrl, rota } = useCampeonato();
   const [expandido, setExpandido] = useState(null);
   const [detalhePorEvento, setDetalhePorEvento] = useState({});
 
@@ -17,7 +19,7 @@ export default function ListaEventos({ eventos }) {
     setExpandido(evento.id);
     if (!detalhePorEvento[evento.id]) {
       try {
-        const resp = await fetch(`/api/eventos/${evento.id}`);
+        const resp = await fetch(apiUrl(`/eventos/${evento.id}`));
         if (resp.ok) {
           const dados = await resp.json();
           setDetalhePorEvento((atual) => ({ ...atual, [evento.id]: dados }));
@@ -70,7 +72,7 @@ export default function ListaEventos({ eventos }) {
           return (
             <Link
               key={evento.id}
-              to={`/eventos/${evento.id}`}
+              to={rota(`/eventos/${evento.id}`)}
               className="flex items-center gap-3 px-4 py-3 border border-asfalto-700 rounded-lg hover:bg-asfalto-900 transition-colors"
             >
               {linha}

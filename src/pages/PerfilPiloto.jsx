@@ -4,9 +4,11 @@ import { Loader2, User, Instagram, Share2, Pencil, ArrowLeft, Clock } from 'luci
 import EstatisticasPiloto from '../components/perfil/EstatisticasPiloto.jsx';
 import EditarPerfilModal from '../components/perfil/EditarPerfilModal.jsx';
 import CartaoCompartilhar from '../components/perfil/CartaoCompartilhar.jsx';
+import { useCampeonato } from '../context/CampeonatoContext.jsx';
 
 export default function PerfilPiloto() {
   const { id } = useParams();
+  const { apiUrl, rota } = useCampeonato();
   const [piloto, setPiloto] = useState(null);
   const [erro, setErro] = useState(null);
   const [modalEdicao, setModalEdicao] = useState(false);
@@ -20,7 +22,7 @@ export default function PerfilPiloto() {
     setErro(null);
     setPiloto(null);
     try {
-      const resp = await fetch(`/api/pilotos/${id}`);
+      const resp = await fetch(apiUrl(`/pilotos/${id}`));
       if (!resp.ok) throw new Error('Piloto não encontrado');
       setPiloto(await resp.json());
     } catch (e) {
@@ -32,7 +34,7 @@ export default function PerfilPiloto() {
     return (
       <main className="max-w-md mx-auto px-4 py-16 text-center">
         <p className="text-checkered">{erro}</p>
-        <Link to="/" className="text-racing hover:text-racing-light text-sm mt-3 inline-block">
+        <Link to={rota('/')} className="text-racing hover:text-racing-light text-sm mt-3 inline-block">
           Voltar pra Home
         </Link>
       </main>
@@ -49,7 +51,7 @@ export default function PerfilPiloto() {
 
   return (
     <main className="max-w-xl mx-auto px-4 py-10 space-y-8">
-      <Link to="/" className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered w-fit">
+      <Link to={rota('/')} className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered w-fit">
         <ArrowLeft className="w-4 h-4" /> Voltar
       </Link>
 

@@ -1,8 +1,10 @@
 import { CalendarClock, Flag, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatarData } from '../../lib/data.js';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function AgendaEventos({ ultimoPassado, proximoFuturo }) {
+  const { rota } = useCampeonato();
   if (!ultimoPassado && !proximoFuturo) return null;
 
   return (
@@ -50,7 +52,7 @@ export default function AgendaEventos({ ultimoPassado, proximoFuturo }) {
             </div>
           </div>
           <Link
-            to={`/eventos/${proximoFuturo.id}`}
+            to={rota(`/eventos/${proximoFuturo.id}`)}
             className="flex items-center justify-center w-full sm:w-auto text-sm font-medium text-checkered
                        bg-racing hover:bg-racing-dark px-4 py-2 rounded-lg shrink-0"
           >

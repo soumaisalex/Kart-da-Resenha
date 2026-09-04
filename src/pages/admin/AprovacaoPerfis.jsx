@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { Check, X, Loader2, User, Phone, Mail, Instagram, Inbox, Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
 import EditarPerfilAdminModal from './EditarPerfilAdminModal.jsx';
 import ConfirmarModal from '../../components/admin/ConfirmarModal.jsx';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function GestaoPilotos() {
+  const { apiUrl } = useCampeonato();
   const [pendentes, setPendentes] = useState(null); // null = carregando
   const [aprovados, setAprovados] = useState(null);
   const [processando, setProcessando] = useState(null); // id em ação no momento
@@ -20,7 +22,7 @@ export default function GestaoPilotos() {
   async function carregarPendentes() {
     setErro(null);
     try {
-      const resp = await fetch('/api/pilotos/pendentes');
+      const resp = await fetch(apiUrl('/pilotos/pendentes'));
       if (!resp.ok) throw new Error('Não foi possível carregar a fila de aprovação');
       setPendentes(await resp.json());
     } catch (e) {
@@ -31,7 +33,7 @@ export default function GestaoPilotos() {
 
   async function carregarAprovados() {
     try {
-      const resp = await fetch('/api/pilotos/gerenciar');
+      const resp = await fetch(apiUrl('/pilotos/gerenciar'));
       if (!resp.ok) throw new Error('Não foi possível carregar os perfis aprovados');
       setAprovados(await resp.json());
     } catch (e) {
@@ -42,7 +44,7 @@ export default function GestaoPilotos() {
   async function decidir(id, acao) {
     setProcessando(id);
     try {
-      const resp = await fetch('/api/pilotos/pendentes', {
+      const resp = await fetch(apiUrl('/pilotos/pendentes'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, acao })
@@ -60,7 +62,7 @@ export default function GestaoPilotos() {
   async function alternarOculto(piloto) {
     setProcessando(piloto.id);
     try {
-      const resp = await fetch('/api/pilotos/gerenciar', {
+      const resp = await fetch(apiUrl('/pilotos/gerenciar'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: piloto.id, oculto: !piloto.oculto })
@@ -78,7 +80,7 @@ export default function GestaoPilotos() {
   async function excluirPiloto(piloto) {
     setExcluindo(true);
     try {
-      const resp = await fetch(`/api/pilotos/gerenciar/${piloto.id}`, { method: 'DELETE' });
+      const resp = await fetch(apiUrl(`/pilotos/gerenciar/${piloto.id}`), { method: 'DELETE' });
       if (!resp.ok) throw new Error('Não foi possível excluir o piloto');
       setAprovados((atual) => atual.filter((p) => p.id !== piloto.id));
     } catch (e) {

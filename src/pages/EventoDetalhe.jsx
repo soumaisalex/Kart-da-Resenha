@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2, CalendarClock, MapPin, ArrowLeft, CheckCircle2, User, AlertTriangle } from 'lucide-react';
 import { formatarData } from '../lib/data.js';
+import { useCampeonato } from '../context/CampeonatoContext.jsx';
 
 export default function EventoDetalhe() {
   const { id } = useParams();
+  const { apiUrl, rota } = useCampeonato();
   const [evento, setEvento] = useState(null);
   const [erroCarregar, setErroCarregar] = useState(null);
 
@@ -18,13 +20,13 @@ export default function EventoDetalhe() {
 
   useEffect(() => {
     carregarEvento();
-    fetch('/api/pilotos').then((r) => r.json()).then(setPilotos).catch(() => {});
+    fetch(apiUrl('/pilotos')).then((r) => r.json()).then(setPilotos).catch(() => {});
   }, [id]);
 
   async function carregarEvento() {
     setErroCarregar(null);
     try {
-      const resp = await fetch(`/api/eventos/${id}`);
+      const resp = await fetch(apiUrl(`/eventos/${id}`));
       if (!resp.ok) throw new Error('Evento não encontrado');
       setEvento(await resp.json());
     } catch (e) {
@@ -45,7 +47,7 @@ export default function EventoDetalhe() {
 
     // Checa se esse piloto já tem data de nascimento cadastrada
     try {
-      const resp = await fetch(`/api/pilotos/${pilotoId}`);
+      const resp = await fetch(apiUrl(`/pilotos/${pilotoId}`));
       const dados = await resp.json();
       setPrecisaNascimento(!dados.tem_data_nascimento);
     } catch {
@@ -68,7 +70,7 @@ export default function EventoDetalhe() {
 
     setConfirmando(true);
     try {
-      const resp = await fetch(`/api/eventos/${id}/confirmar`, {
+      const resp = await fetch(apiUrl(`/eventos/${id}/confirmar`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -92,7 +94,7 @@ export default function EventoDetalhe() {
     return (
       <main className="max-w-md mx-auto px-4 py-16 text-center">
         <p className="text-checkered">{erroCarregar}</p>
-        <Link to="/" className="text-racing hover:text-racing-light text-sm mt-3 inline-block">Voltar pra Home</Link>
+        <Link to={rota('/')} className="text-racing hover:text-racing-light text-sm mt-3 inline-block">Voltar pra Home</Link>
       </main>
     );
   }
@@ -107,7 +109,7 @@ export default function EventoDetalhe() {
 
   return (
     <main className="max-w-md mx-auto px-4 py-10 space-y-6">
-      <Link to="/" className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered w-fit">
+      <Link to={rota('/')} className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered w-fit">
         <ArrowLeft className="w-4 h-4" /> Voltar
       </Link>
 
@@ -174,7 +176,7 @@ export default function EventoDetalhe() {
             {pilotos.length === 0 && (
               <p className="text-xs text-asfalto-600">
                 Ainda não tem perfil?{' '}
-                <Link to="/reivindicar" className="text-racing hover:text-racing-light">Reivindique o seu</Link> antes de confirmar.
+                <Link to={rota('/reivindicar')} className="text-racing hover:text-racing-light">Reivindique o seu</Link> antes de confirmar.
               </p>
             )}
 

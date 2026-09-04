@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { X, Loader2, Zap, Trophy } from 'lucide-react';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function ModalPontuacao({ onFechar }) {
+  const { apiUrl } = useCampeonato();
   const [config, setConfig] = useState(null);
   const [erro, setErro] = useState(null);
 
   useEffect(() => {
-    fetch('/api/config/pontuacao')
+    fetch(apiUrl('/config/pontuacao'))
       .then((r) => r.json())
       .then(setConfig)
       .catch(() => setErro('Não foi possível carregar a pontuação agora.'));
-  }, []);
+  }, [apiUrl]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">

@@ -3,8 +3,10 @@ import { Check, AlertTriangle, Loader2, User, Trash2, Plus } from 'lucide-react'
 import { tempoParaMs } from '../../lib/tempo.js';
 import { sugerirPiloto } from '../../lib/pilotoMatching.js';
 import { formatarData } from '../../lib/data.js';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 export default function RevisaoResultados({ dadosExtraidos, onImportado, onCancelar }) {
+  const { apiUrl } = useCampeonato();
   const [eventos, setEventos] = useState([]);
   const [eventoSelecionadoId, setEventoSelecionadoId] = useState(''); // '' = criar novo evento
 
@@ -38,7 +40,7 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
   // Carrega pilotos aprovados (pra sugerir vínculo) e eventos já cadastrados (pra permitir
   // anexar essa bateria a um evento existente em vez de criar um novo automaticamente)
   useEffect(() => {
-    fetch('/api/pilotos')
+    fetch(apiUrl('/pilotos'))
       .then((r) => r.json())
       .then((lista) => {
         setPilotos(lista);
@@ -55,7 +57,7 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
       })
       .catch(() => {});
 
-    fetch('/api/eventos')
+    fetch(apiUrl('/eventos'))
       .then((r) => r.json())
       .then(setEventos)
       .catch(() => {});
@@ -124,7 +126,7 @@ export default function RevisaoResultados({ dadosExtraidos, onImportado, onCance
         }))
       };
 
-      const resp = await fetch('/api/resultados/importar', {
+      const resp = await fetch(apiUrl('/resultados/importar'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

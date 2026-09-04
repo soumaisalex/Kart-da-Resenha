@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2, User, ArrowLeft, UserPlus } from 'lucide-react';
 import EstatisticasPiloto from '../components/perfil/EstatisticasPiloto.jsx';
+import { useCampeonato } from '../context/CampeonatoContext.jsx';
 
 export default function PerfilResultadoNaoVinculado() {
   const { nome } = useParams();
+  const { apiUrl, rota } = useCampeonato();
   const [dados, setDados] = useState(null);
   const [erro, setErro] = useState(null);
 
@@ -16,7 +18,7 @@ export default function PerfilResultadoNaoVinculado() {
     setErro(null);
     setDados(null);
     try {
-      const resp = await fetch(`/api/pilotos/por-nome/${encodeURIComponent(nome)}`);
+      const resp = await fetch(apiUrl(`/pilotos/por-nome/${encodeURIComponent(nome)}`));
       const corpo = await resp.json();
       if (!resp.ok) throw new Error(corpo.erro || 'Não encontramos esse resultado');
       setDados(corpo);
@@ -29,7 +31,7 @@ export default function PerfilResultadoNaoVinculado() {
     return (
       <main className="max-w-md mx-auto px-4 py-16 text-center">
         <p className="text-checkered">{erro}</p>
-        <Link to="/" className="text-racing hover:text-racing-light text-sm mt-3 inline-block">
+        <Link to={rota('/')} className="text-racing hover:text-racing-light text-sm mt-3 inline-block">
           Voltar pra Home
         </Link>
       </main>
@@ -46,7 +48,7 @@ export default function PerfilResultadoNaoVinculado() {
 
   return (
     <main className="max-w-xl mx-auto px-4 py-10 space-y-8">
-      <Link to="/" className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered w-fit">
+      <Link to={rota('/')} className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered w-fit">
         <ArrowLeft className="w-4 h-4" /> Voltar
       </Link>
 
@@ -61,7 +63,7 @@ export default function PerfilResultadoNaoVinculado() {
       <EstatisticasPiloto dados={dados} />
 
       <Link
-        to={`/reivindicar?nome=${encodeURIComponent(dados.nome)}`}
+        to={rota(`/reivindicar?nome=${encodeURIComponent(dados.nome)}`)}
         className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-racing hover:bg-racing-dark
                    text-checkered font-display font-semibold"
       >

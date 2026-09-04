@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Trophy, UserPlus } from 'lucide-react';
+import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 
 const ALTURA = { 1: 'h-36 sm:h-44', 2: 'h-24 sm:h-32', 3: 'h-16 sm:h-24' };
 const ORDEM_VISUAL = { 1: 'order-2', 2: 'order-1', 3: 'order-3' };
@@ -7,6 +8,7 @@ const COR_TEXTO = { 1: 'text-ouro', 2: 'text-prata', 3: 'text-bronze' };
 const COR_BORDA = { 1: 'border-ouro', 2: 'border-prata', 3: 'border-bronze' };
 
 export default function Podio({ top3 }) {
+  const { rota } = useCampeonato();
   if (!top3.length) return null;
 
   return (
@@ -14,8 +16,8 @@ export default function Podio({ top3 }) {
       {top3.map((piloto, i) => {
         const posicao = i + 1;
         const destino = piloto.vinculado
-          ? `/piloto/${piloto.piloto_id}`
-          : `/piloto/nome/${encodeURIComponent(piloto.nome)}`;
+          ? rota(`/piloto/${piloto.piloto_id}`)
+          : rota(`/piloto/nome/${encodeURIComponent(piloto.nome)}`);
 
         return (
           <Link
