@@ -1,6 +1,6 @@
 import { getDb } from '../../../../_lib/db.js';
-import { exigirAdmin } from '../../../../_lib/auth.js';
 import { exigirCampeonato } from '../../../../_lib/campeonato.js';
+import { exigirDonoCampeonato } from '../../../../_lib/autorizacao.js';
 
 // GET /api/c/:slug/config/pontuacao -> tabela de pontos por posição + pontos de volta mais rápida
 export async function onRequestGet(context) {
@@ -25,11 +25,8 @@ export async function onRequestGet(context) {
 // PUT /api/c/:slug/config/pontuacao -> atualizar pontuação (área admin)
 // body: { posicoes: [{ posicao, pontos }], pontos_melhor_volta }
 export async function onRequestPut(context) {
-  const negado1 = await exigirAdmin(context);
-  if (negado1) return negado1;
-
   const sql = getDb(context.env);
-  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  const { campeonato, negado } = await exigirDonoCampeonato(context, sql);
   if (negado) return negado;
 
   const { posicoes, pontos_melhor_volta } = await context.request.json();

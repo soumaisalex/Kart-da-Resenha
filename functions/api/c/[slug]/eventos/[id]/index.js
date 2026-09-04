@@ -1,6 +1,6 @@
 import { getDb } from '../../../../../_lib/db.js';
-import { exigirAdmin } from '../../../../../_lib/auth.js';
 import { exigirCampeonato } from '../../../../../_lib/campeonato.js';
+import { exigirDonoCampeonato } from '../../../../../_lib/autorizacao.js';
 
 // GET /api/c/:slug/eventos/:id -> detalhe do evento + confirmados + resultados
 export async function onRequestGet(context) {
@@ -51,11 +51,8 @@ export async function onRequestGet(context) {
 
 // PATCH /api/c/:slug/eventos/:id -> editar nome/data/local (só admin)
 export async function onRequestPatch(context) {
-  const negado1 = await exigirAdmin(context);
-  if (negado1) return negado1;
-
   const sql = getDb(context.env);
-  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  const { campeonato, negado } = await exigirDonoCampeonato(context, sql);
   if (negado) return negado;
 
   const { id } = context.params;
@@ -76,11 +73,8 @@ export async function onRequestPatch(context) {
 
 // DELETE /api/c/:slug/eventos/:id -> exclui o evento e tudo vinculado (só admin)
 export async function onRequestDelete(context) {
-  const negado1 = await exigirAdmin(context);
-  if (negado1) return negado1;
-
   const sql = getDb(context.env);
-  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  const { campeonato, negado } = await exigirDonoCampeonato(context, sql);
   if (negado) return negado;
 
   const { id } = context.params;

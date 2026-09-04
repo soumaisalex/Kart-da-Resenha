@@ -1,6 +1,6 @@
 import { getDb } from '../../../../_lib/db.js';
-import { exigirAdmin } from '../../../../_lib/auth.js';
 import { exigirCampeonato } from '../../../../_lib/campeonato.js';
+import { exigirDonoCampeonato } from '../../../../_lib/autorizacao.js';
 
 // GET /api/c/:slug/eventos -> agenda completa (passados + futuros)
 export async function onRequestGet(context) {
@@ -20,11 +20,8 @@ export async function onRequestGet(context) {
 // POST /api/c/:slug/eventos -> criar evento futuro (área admin)
 // body: { nome, data_evento, local }
 export async function onRequestPost(context) {
-  const negado1 = await exigirAdmin(context);
-  if (negado1) return negado1;
-
   const sql = getDb(context.env);
-  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  const { campeonato, negado } = await exigirDonoCampeonato(context, sql);
   if (negado) return negado;
 
   const body = await context.request.json();

@@ -1,6 +1,5 @@
-import { exigirAdmin } from '../../../../_lib/auth.js';
 import { getDb } from '../../../../_lib/db.js';
-import { exigirCampeonato } from '../../../../_lib/campeonato.js';
+import { exigirDonoCampeonato } from '../../../../_lib/autorizacao.js';
 import { jsonrepair } from 'jsonrepair';
 
 // POST /api/c/:slug/ocr
@@ -65,12 +64,9 @@ function extrairJson(texto) {
 }
 
 export async function onRequestPost(context) {
-  const negado1 = await exigirAdmin(context);
-  if (negado1) return negado1;
-
   const { env, request } = context;
   const sql = getDb(env);
-  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  const { campeonato, negado } = await exigirDonoCampeonato(context, sql);
   if (negado) return negado;
 
   if (!env.RESULTADOS_BUCKET) {

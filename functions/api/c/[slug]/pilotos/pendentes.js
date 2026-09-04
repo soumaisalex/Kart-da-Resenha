@@ -1,15 +1,11 @@
 import { getDb } from '../../../../_lib/db.js';
-import { exigirAdmin } from '../../../../_lib/auth.js';
-import { exigirCampeonato } from '../../../../_lib/campeonato.js';
+import { exigirDonoCampeonato } from '../../../../_lib/autorizacao.js';
 import { removerPilotoEDesvincular } from '../../../../_lib/pilotoRemocao.js';
 
 // GET /api/c/:slug/pilotos/pendentes -> fila de aprovação (área admin)
 export async function onRequestGet(context) {
-  const negado1 = await exigirAdmin(context);
-  if (negado1) return negado1;
-
   const sql = getDb(context.env);
-  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  const { campeonato, negado } = await exigirDonoCampeonato(context, sql);
   if (negado) return negado;
 
   const pendentes = await sql`
@@ -26,11 +22,8 @@ export async function onRequestGet(context) {
 // Rejeitar desfaz a reivindicação por completo: solta os resultados (voltam a
 // piloto_id = NULL) e apaga o registro do piloto, pra alguém poder reivindicar de novo.
 export async function onRequestPost(context) {
-  const negado1 = await exigirAdmin(context);
-  if (negado1) return negado1;
-
   const sql = getDb(context.env);
-  const { campeonato, negado } = await exigirCampeonato(context, sql);
+  const { campeonato, negado } = await exigirDonoCampeonato(context, sql);
   if (negado) return negado;
 
   const { id, acao } = await context.request.json();

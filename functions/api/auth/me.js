@@ -4,5 +4,5 @@ import { verificarSessaoAdmin } from '../../_lib/auth.js';
 export async function onRequestGet(context) {
   const payload = await verificarSessaoAdmin(context);
   if (!payload) return Response.json({ autenticado: false }, { status: 401 });
-  return Response.json({ autenticado: true, usuario: payload.usuario });
+  return Response.json({ autenticado: true, email: payload.email });
 }
