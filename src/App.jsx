@@ -5,8 +5,10 @@ import PerfilResultadoNaoVinculado from './pages/PerfilResultadoNaoVinculado.jsx
 import ReivindicarPerfil from './pages/ReivindicarPerfil.jsx';
 import EventoDetalhe from './pages/EventoDetalhe.jsx';
 import Admin from './pages/Admin.jsx';
+import Painel from './pages/Painel.jsx';
 import BotaoAdminFlutuante from './components/BotaoAdminFlutuante.jsx';
 import ProtegerAdmin from './components/admin/ProtegerAdmin.jsx';
+import ProtegerConta from './components/ProtegerConta.jsx';
 import { CampeonatoProvider } from './context/CampeonatoContext.jsx';
 
 // TODO (próxima fase): a raiz "/" vai virar a landing page one-page (marketing +
@@ -37,6 +39,7 @@ export default function App() {
     <div className="min-h-screen">
       <Routes>
         <Route path="/" element={<Navigate to={`/c/${SLUG_LEGADO}`} replace />} />
+        <Route path="/painel" element={<ProtegerConta><Painel /></ProtegerConta>} />
 
         <Route path="/c/:slug" element={<LayoutPublico><Home /></LayoutPublico>} />
         <Route path="/c/:slug/piloto/:id" element={<LayoutPublico><PerfilPiloto /></LayoutPublico>} />
