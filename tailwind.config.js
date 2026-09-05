@@ -27,6 +27,20 @@ export default {
       },
       backgroundImage: {
         'flag-pattern': "repeating-conic-gradient(#1a1d23 0% 25%, #262a32 0% 50%)"
+      },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' }
+        },
+        pulsoGlow: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(255,59,48,0.45)' },
+          '50%': { boxShadow: '0 0 0 14px rgba(255,59,48,0)' }
+        }
+      },
+      animation: {
+        marquee: 'marquee 22s linear infinite',
+        'pulso-glow': 'pulsoGlow 2.4s ease-out infinite'
       }
     }
   },

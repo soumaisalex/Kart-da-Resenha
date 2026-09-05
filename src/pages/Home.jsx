@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Flag, HelpCircle } from 'lucide-react';
+import { Loader2, HelpCircle } from 'lucide-react';
 import Podio from '../components/home/Podio.jsx';
 import DestaqueVoltaRapida from '../components/home/DestaqueVoltaRapida.jsx';
 import ListaRanking from '../components/home/ListaRanking.jsx';
@@ -52,7 +52,7 @@ export default function Home() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-10 space-y-12">
       <header className="flex items-center gap-2 justify-center">
-        <Flag className="w-6 h-6 text-racing" />
+        <img src="/logo-icone.png" alt="" className="h-7 w-auto" />
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-checkered tracking-wide">
           {campeonato?.nome || 'Carregando...'}
         </h1>
