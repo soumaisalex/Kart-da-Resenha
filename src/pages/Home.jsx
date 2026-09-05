@@ -27,6 +27,10 @@ export default function Home() {
     fetch(apiUrl('/eventos')).then((r) => r.json()).then(setEventos).catch(() => setEventos([]));
   }, [apiUrl]);
 
+  useEffect(() => {
+    if (campeonato?.nome) document.title = campeonato.nome;
+  }, [campeonato]);
+
   const carregando = ranking === null || eventos === null;
 
   if (carregando) {

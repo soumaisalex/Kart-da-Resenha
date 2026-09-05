@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import Landing from './pages/Landing.jsx';
 import Home from './pages/Home.jsx';
 import PerfilPiloto from './pages/PerfilPiloto.jsx';
 import PerfilResultadoNaoVinculado from './pages/PerfilResultadoNaoVinculado.jsx';
@@ -10,10 +13,6 @@ import BotaoAdminFlutuante from './components/BotaoAdminFlutuante.jsx';
 import ProtegerAdmin from './components/admin/ProtegerAdmin.jsx';
 import ProtegerConta from './components/ProtegerConta.jsx';
 import { CampeonatoProvider } from './context/CampeonatoContext.jsx';
-
-// TODO (próxima fase): a raiz "/" vai virar a landing page one-page (marketing +
-// login/cadastro). Por enquanto redireciona pro único campeonato que existe.
-const SLUG_LEGADO = 'kart-da-resenha';
 
 // Layout das páginas públicas do campeonato — inclui o botão flutuante de acesso ao admin.
 function LayoutPublico({ children }) {
@@ -34,11 +33,36 @@ function LayoutAdmin({ children }) {
   );
 }
 
+// Raiz "/": quem já está logado vai direto pro painel — a landing page é só pra visitante.
+function Inicio() {
+  const [status, setStatus] = useState('verificando'); // verificando | visitante | logado
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => setStatus(r.ok ? 'logado' : 'visitante'))
+      .catch(() => setStatus('visitante'));
+  }, []);
+
+  if (status === 'verificando') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-racing" />
+      </div>
+    );
+  }
+
+  if (status === 'logado') {
+    return <Navigate to="/painel" replace />;
+  }
+
+  return <Landing />;
+}
+
 export default function App() {
   return (
     <div className="min-h-screen">
       <Routes>
-        <Route path="/" element={<Navigate to={`/c/${SLUG_LEGADO}`} replace />} />
+        <Route path="/" element={<Inicio />} />
         <Route path="/painel" element={<ProtegerConta><Painel /></ProtegerConta>} />
 
         <Route path="/c/:slug" element={<LayoutPublico><Home /></LayoutPublico>} />
