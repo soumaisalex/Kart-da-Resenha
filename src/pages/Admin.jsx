@@ -5,7 +5,6 @@ import ImportarResultados from './admin/ImportarResultados.jsx';
 import AprovacaoPerfis from './admin/AprovacaoPerfis.jsx';
 import GestaoEventos from './admin/GestaoEventos.jsx';
 import ConfiguracaoPontuacao from './admin/ConfiguracaoPontuacao.jsx';
-import { useCampeonato } from '../context/CampeonatoContext.jsx';
 
 const ABAS = [
   { id: 'importar', label: 'Importar resultados', icone: UploadCloud, Componente: ImportarResultados },
@@ -15,13 +14,12 @@ const ABAS = [
 ];
 
 export default function Admin() {
-  const { rota } = useCampeonato();
   const [abaAtiva, setAbaAtiva] = useState('importar');
   const AbaAtual = ABAS.find((a) => a.id === abaAtiva)?.Componente;
 
   async function sair() {
     await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = rota('/');
+    window.location.href = '/painel';
   }
 
   return (

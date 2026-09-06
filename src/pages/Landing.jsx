@@ -1,6 +1,8 @@
 import { Camera, ListChecks, UserCheck2, TrendingUp, CalendarCheck, Share2, Layers, Trophy } from 'lucide-react';
 import PodioIlustrativo from '../components/landing/PodioIlustrativo.jsx';
 import TickerFaixa from '../components/landing/TickerFaixa.jsx';
+import BuscaPlataforma from '../components/landing/BuscaPlataforma.jsx';
+import UltimasProvas from '../components/landing/UltimasProvas.jsx';
 import BotaoGoogle from '../components/BotaoGoogle.jsx';
 
 const PASSOS = [
@@ -100,6 +102,10 @@ export default function Landing() {
         </div>
       </header>
 
+      <div className="py-10 sm:py-12">
+        <BuscaPlataforma />
+      </div>
+
       <TickerFaixa />
 
       {/* Como funciona */}
@@ -130,6 +136,8 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      <UltimasProvas />
 
       {/* Recursos */}
       <section className="relative bg-asfalto-900/50 py-16 sm:py-24 overflow-hidden">
