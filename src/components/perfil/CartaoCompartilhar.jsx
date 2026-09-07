@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import { X, Share2, Loader2, Trophy, User } from 'lucide-react';
+import { X, Share2, Loader2, User } from 'lucide-react';
 import { msParaTempo } from '../../lib/tempo.js';
 
 export default function CartaoCompartilhar({ piloto, onFechar }) {
@@ -52,6 +52,7 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
   }
 
   const posicaoGeral = piloto.ranking_geral?.posicao;
+  const melhorVolta = piloto.stats?.melhor_volta_ms ? msParaTempo(piloto.stats.melhor_volta_ms) : '--:--.---';
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center px-4 gap-6">
@@ -63,49 +64,52 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
         Card capturado pixel a pixel pela função de compartilhar.
         Layout de propósito SEM flexbox pra empilhar o conteúdo (flex-grow dentro de
         container com aspect-ratio não renderiza de forma confiável na captura via
-        html-to-image — é uma limitação conhecida da lib). Altura fixa em pixels +
-        margem simples entre blocos + estatísticas fixadas no rodapé por posição
-        absoluta, desacopladas da altura do nome (que pode quebrar em 2 linhas).
+        html-to-image). Fundo vermelho sólido — diferencia do resto do site, que é
+        todo escuro — com uma faixa "ticker" (estética puxada da landing page) exibindo
+        a melhor volta, e os cards de estatística em blocos escuros por cima do vermelho.
       */}
       <div
         ref={cartaoRef}
-        className="w-72 h-[512px] rounded-2xl overflow-hidden relative
-                   bg-gradient-to-b from-asfalto-900 to-asfalto-950 border border-asfalto-700"
+        className="w-72 h-[512px] rounded-2xl overflow-hidden relative bg-racing"
       >
-        <div className="absolute inset-x-0 top-0 h-2 bg-[repeating-linear-gradient(90deg,#ff3b30_0_10px,#f5f5f0_10px_20px)]" />
+        <div className="absolute inset-x-0 top-0 h-2 bg-[repeating-linear-gradient(90deg,#0a0b0d_0_10px,#f5f5f0_10px_20px)]" />
 
-        <div className="flex items-center gap-2 px-6 pt-6">
-          <Trophy className="w-4 h-4 text-racing" />
-          <span className="font-display font-semibold text-checkered text-sm tracking-wide">KART DA RESENHA</span>
+        <div className="flex items-center justify-center gap-2 px-6 pt-7">
+          <img src="/logo-icone.png" alt="" className="h-6 w-auto" />
+          <span className="font-display font-bold text-asfalto-950 text-sm tracking-wide">KART DA RESENHA</span>
         </div>
 
-        <div className="px-6 mt-16 text-center">
+        <div className="px-6 mt-8 text-center">
           {mostrarFoto ? (
             <img
               src={fotoProxy}
               alt={piloto.nome}
               onError={() => setFotoFalhou(true)}
-              className="w-24 h-24 rounded-full object-cover border-4 border-racing mx-auto"
+              className="w-24 h-24 rounded-full object-cover border-4 border-checkered mx-auto shadow-lg"
             />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-asfalto-800 border-4 border-racing flex items-center justify-center mx-auto">
-              <User className="w-10 h-10 text-asfalto-600" />
+            <div className="w-24 h-24 rounded-full bg-asfalto-950/20 border-4 border-checkered flex items-center justify-center mx-auto">
+              <User className="w-10 h-10 text-checkered" />
             </div>
           )}
           <p className="font-display font-bold text-2xl text-checkered leading-tight mt-4">{piloto.nome}</p>
           {posicaoGeral && (
-            <p className="text-racing font-display font-semibold text-sm mt-2">{posicaoGeral}º no ranking geral</p>
+            <p className="inline-block bg-asfalto-950 text-checkered font-display font-semibold text-xs px-3 py-1 rounded-full mt-2">
+              {posicaoGeral}º no ranking geral
+            </p>
           )}
         </div>
 
-        <div className="absolute bottom-6 left-6 right-6 grid grid-cols-3 gap-2 text-center">
+        {/* Faixa "ticker" — mesma estética da landing page, aqui parada (é uma imagem estática) */}
+        <div className="mt-6 bg-asfalto-950 py-2.5 overflow-hidden -rotate-1">
+          <p className="text-center font-display font-bold text-checkered text-sm tracking-wide">
+            MELHOR VOLTA <span className="text-racing">•</span> {melhorVolta}
+          </p>
+        </div>
+
+        <div className="absolute bottom-6 left-6 right-6 grid grid-cols-2 gap-3 text-center">
           <Estatistica valor={piloto.stats?.total_corridas ?? 0} label="corridas" />
           <Estatistica valor={Number(piloto.stats?.pontos_totais ?? 0)} label="pontos" />
-          <Estatistica
-            valor={piloto.stats?.melhor_volta_ms ? msParaTempo(piloto.stats.melhor_volta_ms) : '--'}
-            label="melhor volta"
-            pequeno
-          />
         </div>
       </div>
 
@@ -124,11 +128,11 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
   );
 }
 
-function Estatistica({ valor, label, pequeno }) {
+function Estatistica({ valor, label }) {
   return (
-    <div className="bg-asfalto-800/60 rounded-lg py-2">
-      <p className={`font-display font-bold text-checkered ${pequeno ? 'text-sm' : 'text-lg'}`}>{valor}</p>
-      <p className="text-[10px] uppercase tracking-wide text-asfalto-600">{label}</p>
+    <div className="bg-asfalto-950 rounded-lg py-3">
+      <p className="font-display font-bold text-checkered text-xl">{valor}</p>
+      <p className="text-[10px] uppercase tracking-wide text-checkered/60">{label}</p>
     </div>
   );
 }

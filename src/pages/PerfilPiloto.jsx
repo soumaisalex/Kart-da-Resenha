@@ -4,6 +4,7 @@ import { Loader2, User, Instagram, Share2, Pencil, ArrowLeft, Clock } from 'luci
 import EstatisticasPiloto from '../components/perfil/EstatisticasPiloto.jsx';
 import EditarPerfilModal from '../components/perfil/EditarPerfilModal.jsx';
 import CartaoCompartilhar from '../components/perfil/CartaoCompartilhar.jsx';
+import { linkInstagram } from '../lib/instagram.js';
 import { useCampeonato } from '../context/CampeonatoContext.jsx';
 
 export default function PerfilPiloto() {
@@ -82,9 +83,14 @@ export default function PerfilPiloto() {
         )}
         <h1 className="font-display font-bold text-2xl text-checkered">{piloto.nome}</h1>
         {piloto.instagram && (
-          <span className="flex items-center gap-1 text-sm text-asfalto-600">
+          <a
+            href={linkInstagram(piloto.instagram)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-sm text-asfalto-600 hover:text-racing"
+          >
             <Instagram className="w-4 h-4" /> {piloto.instagram}
-          </span>
+          </a>
         )}
 
         <div className="flex gap-2 mt-1">
