@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
 import { X, Share2, Loader2, User } from 'lucide-react';
 import { msParaTempo } from '../../lib/tempo.js';
@@ -7,12 +7,47 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
   const cartaoRef = useRef(null);
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState(null);
-  const [fotoFalhou, setFotoFalhou] = useState(false);
+  const [fotoDataUrl, setFotoDataUrl] = useState(null);
+  const [fotoCarregando, setFotoCarregando] = useState(!!piloto.foto_url);
 
-  // Foto servida pela mesma origem do site (via proxy) — captura de canvas trava com
-  // imagens de outra origem (o bucket R2) sem cabeçalho de CORS configurado.
-  const fotoProxy = piloto.foto_url ? `/api/imagem-proxy?url=${encodeURIComponent(piloto.foto_url)}` : null;
-  const mostrarFoto = fotoProxy && !fotoFalhou;
+  // Converte a foto pra data URL assim que o modal abre — em vez de deixar o
+  // <img> apontar pro proxy e torcer pra já estar carregado na hora da captura
+  // (o html-to-image roda no exato momento do clique, e uma requisição de rede
+  // que ainda não terminou vira uma foto em branco na imagem final). Um data URL
+  // já fica embutido no HTML, sem depender de rede nenhuma na hora de gerar.
+  useEffect(() => {
+    if (!piloto.foto_url) {
+      setFotoCarregando(false);
+      return;
+    }
+    let cancelado = false;
+    fetch(`/api/imagem-proxy?url=${encodeURIComponent(piloto.foto_url)}`)
+      .then((resp) => {
+        if (!resp.ok) throw new Error('Falha ao buscar a foto');
+        return resp.blob();
+      })
+      .then(
+        (blob) =>
+          new Promise((resolve, reject) => {
+            const leitor = new FileReader();
+            leitor.onload = () => resolve(leitor.result);
+            leitor.onerror = reject;
+            leitor.readAsDataURL(blob);
+          })
+      )
+      .then((dataUrl) => {
+        if (!cancelado) setFotoDataUrl(dataUrl);
+      })
+      .catch(() => {
+        if (!cancelado) setFotoDataUrl(null);
+      })
+      .finally(() => {
+        if (!cancelado) setFotoCarregando(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [piloto.foto_url]);
 
   async function compartilhar() {
     setErro(null);
@@ -81,11 +116,14 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
         </div>
 
         <div className="px-6 mt-8 text-center">
-          {mostrarFoto ? (
+          {fotoCarregando ? (
+            <div className="w-24 h-24 rounded-full bg-asfalto-950/20 border-4 border-checkered flex items-center justify-center mx-auto">
+              <Loader2 className="w-8 h-8 text-checkered animate-spin" />
+            </div>
+          ) : fotoDataUrl ? (
             <img
-              src={fotoProxy}
+              src={fotoDataUrl}
               alt={piloto.nome}
-              onError={() => setFotoFalhou(true)}
               className="w-24 h-24 rounded-full object-cover border-4 border-checkered mx-auto shadow-lg"
             />
           ) : (
@@ -122,7 +160,7 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
 
       <button
         onClick={compartilhar}
-        disabled={gerando}
+        disabled={gerando || fotoCarregando}
         className="flex items-center gap-2 px-6 py-3 rounded-full bg-racing hover:bg-racing-dark
                    text-checkered font-display font-semibold disabled:opacity-60"
       >
