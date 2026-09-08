@@ -53,6 +53,7 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
 
   const posicaoGeral = piloto.ranking_geral?.posicao;
   const melhorVolta = piloto.stats?.melhor_volta_ms ? msParaTempo(piloto.stats.melhor_volta_ms) : '--:--.---';
+  const velMedia = piloto.stats?.vel_media_media ? `${Number(piloto.stats.vel_media_media).toFixed(1)}` : '--';
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center px-4 gap-6">
@@ -93,6 +94,11 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
             </div>
           )}
           <p className="font-display font-bold text-2xl text-checkered leading-tight mt-4">{piloto.nome}</p>
+          {piloto.instagram && (
+            <p className="text-checkered/70 text-xs mt-1">
+              {piloto.instagram.startsWith('@') ? piloto.instagram : `@${piloto.instagram}`}
+            </p>
+          )}
           {posicaoGeral && (
             <p className="inline-block bg-asfalto-950 text-checkered font-display font-semibold text-xs px-3 py-1 rounded-full mt-2">
               {posicaoGeral}º no ranking geral
@@ -107,8 +113,9 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
           </p>
         </div>
 
-        <div className="absolute bottom-6 left-6 right-6 grid grid-cols-2 gap-3 text-center">
+        <div className="px-6 mt-6 grid grid-cols-3 gap-2 text-center">
           <Estatistica valor={piloto.stats?.total_corridas ?? 0} label="corridas" />
+          <Estatistica valor={velMedia} label="km/h méd." />
           <Estatistica valor={Number(piloto.stats?.pontos_totais ?? 0)} label="pontos" />
         </div>
       </div>
@@ -130,9 +137,9 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
 
 function Estatistica({ valor, label }) {
   return (
-    <div className="bg-asfalto-950 rounded-lg py-3">
-      <p className="font-display font-bold text-checkered text-xl">{valor}</p>
-      <p className="text-[10px] uppercase tracking-wide text-checkered/60">{label}</p>
+    <div className="bg-asfalto-950 rounded-lg py-5 px-1">
+      <p className="font-display font-bold text-checkered text-lg">{valor}</p>
+      <p className="text-[9px] uppercase tracking-wide text-checkered/60 mt-0.5">{label}</p>
     </div>
   );
 }
