@@ -9,6 +9,7 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
   const [erro, setErro] = useState(null);
   const [fotoDataUrl, setFotoDataUrl] = useState(null);
   const [fotoCarregando, setFotoCarregando] = useState(!!piloto.foto_url);
+  const [erroFoto, setErroFoto] = useState(null);
 
   // Converte a foto pra data URL assim que o modal abre — em vez de deixar o
   // <img> apontar pro proxy e torcer pra já estar carregado na hora da captura
@@ -23,23 +24,30 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
     let cancelado = false;
     fetch(`/api/imagem-proxy?url=${encodeURIComponent(piloto.foto_url)}`)
       .then((resp) => {
-        if (!resp.ok) throw new Error('Falha ao buscar a foto');
+        if (!resp.ok) throw new Error(`Proxy respondeu ${resp.status}`);
         return resp.blob();
       })
       .then(
         (blob) =>
           new Promise((resolve, reject) => {
+            if (!blob.type.startsWith('image/')) {
+              reject(new Error(`Resposta não é uma imagem (tipo: ${blob.type || 'desconhecido'}, tamanho: ${blob.size}b)`));
+              return;
+            }
             const leitor = new FileReader();
             leitor.onload = () => resolve(leitor.result);
-            leitor.onerror = reject;
+            leitor.onerror = () => reject(new Error('Falha ao ler o arquivo da foto'));
             leitor.readAsDataURL(blob);
           })
       )
       .then((dataUrl) => {
         if (!cancelado) setFotoDataUrl(dataUrl);
       })
-      .catch(() => {
-        if (!cancelado) setFotoDataUrl(null);
+      .catch((e) => {
+        if (!cancelado) {
+          setFotoDataUrl(null);
+          setErroFoto(e.message || 'Erro desconhecido ao carregar a foto');
+        }
       })
       .finally(() => {
         if (!cancelado) setFotoCarregando(false);
@@ -169,6 +177,12 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
       </button>
 
       {erro && <p className="text-racing-light text-sm">{erro}</p>}
+      {erroFoto && (
+        <div className="text-racing-light text-xs max-w-xs text-center space-y-1">
+          <p>Foto não carregou: {erroFoto}</p>
+          <p className="text-asfalto-600 break-all">URL: {piloto.foto_url}</p>
+        </div>
+      )}
     </div>
   );
 }
