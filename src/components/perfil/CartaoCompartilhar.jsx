@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import { X, Share2, Loader2, User } from 'lucide-react';
+import { X, Download, Loader2, User } from 'lucide-react';
 import { msParaTempo } from '../../lib/tempo.js';
 
 export default function CartaoCompartilhar({ piloto, onFechar }) {
@@ -41,6 +41,18 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
           })
       )
       .then((dataUrl) => {
+        // Ter o data URL pronto não garante que o navegador já decodificou/pintou
+        // a imagem — isso é feito de forma assíncrona internamente. Criar uma nova
+        // Image() e esperar o onload garante que ela já está pronta pra aparecer
+        // em qualquer captura seguinte, eliminando a intermitência.
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(dataUrl);
+          img.onerror = () => reject(new Error('Falha ao decodificar a imagem'));
+          img.src = dataUrl;
+        });
+      })
+      .then((dataUrl) => {
         if (!cancelado) setFotoDataUrl(dataUrl);
       })
       .catch((e) => {
@@ -57,7 +69,7 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
     };
   }, [piloto.foto_url]);
 
-  async function compartilhar() {
+  async function baixarImagem() {
     setErro(null);
     setGerando(true);
     try {
@@ -66,29 +78,23 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
       // desalinhando o texto na imagem final (mesmo que a tela ao vivo esteja certa).
       if (document.fonts?.ready) await document.fonts.ready;
 
-      const dataUrl = await toPng(cartaoRef.current, { pixelRatio: 2, cacheBust: true });
-      const blob = await (await fetch(dataUrl)).blob();
-      const arquivo = new File([blob], `${piloto.nome.replace(/\s+/g, '-')}-kart-da-resenha.png`, {
-        type: 'image/png'
-      });
+      // Espera dois frames de animação — dá tempo do navegador terminar de pintar
+      // qualquer atualização pendente (ex: a foto que acabou de entrar) antes da
+      // captura em si. Sem isso, a captura pode rodar entre o React atualizar o
+      // DOM e o navegador efetivamente desenhar aquilo na tela, gerando um card
+      // "pela metade" só de vez em quando — exatamente o tipo de falha intermitente.
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-      if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
-        await navigator.share({
-          files: [arquivo],
-          title: 'Kart da Resenha',
-          text: `Confira meu perfil no Kart da Resenha!`
-        });
-      } else {
-        // Desktop / navegadores sem suporte a compartilhar arquivo -> baixa a imagem
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = arquivo.name;
-        link.click();
-      }
+      const dataUrl = await toPng(cartaoRef.current, { pixelRatio: 2, cacheBust: true });
+
+      // Sempre baixa o arquivo direto — em qualquer dispositivo, sem abrir central
+      // de compartilhamento nenhuma (nem no celular, nem no computador).
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `${piloto.nome.replace(/\s+/g, '-')}-kart-da-resenha.png`;
+      link.click();
     } catch (e) {
-      if (e.name !== 'AbortError') {
-        setErro(`Não foi possível gerar a imagem: ${e.message || 'erro desconhecido'}`);
-      }
+      setErro(`Não foi possível gerar a imagem: ${e.message || 'erro desconhecido'}`);
     } finally {
       setGerando(false);
     }
@@ -167,13 +173,13 @@ export default function CartaoCompartilhar({ piloto, onFechar }) {
       </div>
 
       <button
-        onClick={compartilhar}
+        onClick={baixarImagem}
         disabled={gerando || fotoCarregando}
         className="flex items-center gap-2 px-6 py-3 rounded-full bg-racing hover:bg-racing-dark
                    text-checkered font-display font-semibold disabled:opacity-60"
       >
-        {gerando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
-        Compartilhar
+        {gerando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+        Baixar imagem
       </button>
 
       {erro && <p className="text-racing-light text-sm">{erro}</p>}
