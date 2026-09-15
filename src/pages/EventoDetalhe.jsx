@@ -173,12 +173,13 @@ export default function EventoDetalhe() {
               </select>
             </label>
 
-            {pilotos.length === 0 && (
-              <p className="text-xs text-asfalto-600">
-                Ainda não tem perfil?{' '}
-                <Link to={rota('/reivindicar')} className="text-racing hover:text-racing-light">Reivindique o seu</Link> antes de confirmar.
-              </p>
-            )}
+            <p className="text-xs text-asfalto-600">
+              Vai ser sua primeira vez ou ainda não reivindicou seu perfil?{' '}
+              <Link to={rota('/reivindicar')} className="text-racing hover:text-racing-light">
+                Cadastre-se aqui
+              </Link>{' '}
+              antes de confirmar.
+            </p>
 
             {precisaNascimento && pilotoSelecionadoId && (
               <label className="flex flex-col gap-1 text-sm">
