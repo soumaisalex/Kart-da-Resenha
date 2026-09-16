@@ -12,7 +12,9 @@ export async function onRequestPost(context) {
   const { id: eventoId } = context.params;
   const { piloto_id, data_nascimento } = await context.request.json();
 
-  const [evento] = await sql`SELECT id FROM eventos WHERE id = ${eventoId} AND campeonato_id = ${campeonato.id}`;
+  const [evento] = await sql`
+    SELECT id, limite_vagas FROM eventos WHERE id = ${eventoId} AND campeonato_id = ${campeonato.id}
+  `;
   if (!evento) return Response.json({ erro: 'Evento não encontrado' }, { status: 404 });
 
   const [piloto] = await sql`
@@ -38,6 +40,25 @@ export async function onRequestPost(context) {
 
   if (!piloto.data_nascimento) {
     await sql`UPDATE pilotos SET data_nascimento = ${data_nascimento} WHERE id = ${piloto_id}`;
+  }
+
+  // Checa lotação — mas nunca bloqueia quem JÁ estava confirmado (reenviar o formulário
+  // não pode "expulsar" alguém que já tinha vaga garantida).
+  if (evento.limite_vagas != null) {
+    const [jaConfirmado] = await sql`
+      SELECT 1 FROM confirmacoes WHERE evento_id = ${eventoId} AND piloto_id = ${piloto_id}
+    `;
+    if (!jaConfirmado) {
+      const [{ total }] = await sql`
+        SELECT COUNT(*)::int AS total FROM confirmacoes WHERE evento_id = ${eventoId}
+      `;
+      if (total >= evento.limite_vagas) {
+        return Response.json(
+          { erro: `Vagas esgotadas — esse evento tem limite de ${evento.limite_vagas} piloto(s).` },
+          { status: 409 }
+        );
+      }
+    }
   }
 
   const [confirmacao] = await sql`

@@ -9,7 +9,7 @@ export async function onRequestGet(context) {
   if (negado) return negado;
 
   const eventos = await sql`
-    SELECT id, nome, data_evento, local, tipo, arquivo_original_url
+    SELECT id, nome, data_evento, local, tipo, limite_vagas, arquivo_original_url
     FROM eventos
     WHERE campeonato_id = ${campeonato.id}
     ORDER BY data_evento DESC
@@ -18,7 +18,7 @@ export async function onRequestGet(context) {
 }
 
 // POST /api/c/:slug/eventos -> criar evento futuro (área admin)
-// body: { nome, data_evento, local }
+// body: { nome, data_evento, local, limite_vagas? }
 export async function onRequestPost(context) {
   const sql = getDb(context.env);
   const { campeonato, negado } = await exigirDonoCampeonato(context, sql);
@@ -31,9 +31,9 @@ export async function onRequestPost(context) {
   }
 
   const [evento] = await sql`
-    INSERT INTO eventos (campeonato_id, nome, data_evento, local, tipo)
-    VALUES (${campeonato.id}, ${body.nome || null}, ${body.data_evento}, ${body.local || null}, 'futuro')
-    RETURNING id, nome, data_evento, local, tipo
+    INSERT INTO eventos (campeonato_id, nome, data_evento, local, tipo, limite_vagas)
+    VALUES (${campeonato.id}, ${body.nome || null}, ${body.data_evento}, ${body.local || null}, 'futuro', ${body.limite_vagas || null})
+    RETURNING id, nome, data_evento, local, tipo, limite_vagas
   `;
 
   return Response.json(evento, { status: 201 });

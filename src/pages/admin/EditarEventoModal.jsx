@@ -7,7 +7,8 @@ export default function EditarEventoModal({ evento, onFechar, onSalvo }) {
   const [form, setForm] = useState({
     nome: evento.nome || '',
     data_evento: evento.data_evento?.slice(0, 10) || '',
-    local: evento.local || ''
+    local: evento.local || '',
+    limite_vagas: evento.limite_vagas ?? ''
   });
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -20,7 +21,7 @@ export default function EditarEventoModal({ evento, onFechar, onSalvo }) {
       const resp = await fetch(apiUrl(`/eventos/${evento.id}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, limite_vagas: form.limite_vagas ? Number(form.limite_vagas) : null })
       });
       const dados = await resp.json();
       if (!resp.ok) throw new Error(dados.erro || 'Não foi possível salvar');
@@ -45,6 +46,7 @@ export default function EditarEventoModal({ evento, onFechar, onSalvo }) {
           <Campo label="Nome" valor={form.nome} onChange={(v) => setForm({ ...form, nome: v })} />
           <Campo label="Data" tipo="date" valor={form.data_evento} onChange={(v) => setForm({ ...form, data_evento: v })} />
           <Campo label="Local" valor={form.local} onChange={(v) => setForm({ ...form, local: v })} />
+          <Campo label="Limite de vagas (vazio = sem limite)" tipo="number" valor={form.limite_vagas} onChange={(v) => setForm({ ...form, limite_vagas: v })} />
 
           {erro && <p className="text-racing-light text-sm">{erro}</p>}
 

@@ -11,7 +11,7 @@ export async function onRequestGet(context) {
   const { id } = context.params;
 
   const [evento] = await sql`
-    SELECT id, nome, data_evento, local, tipo, arquivo_original_url
+    SELECT id, nome, data_evento, local, tipo, limite_vagas, arquivo_original_url
     FROM eventos WHERE id = ${id} AND campeonato_id = ${campeonato.id}
   `;
   if (!evento) return Response.json({ erro: 'Evento não encontrado' }, { status: 404 });
@@ -62,9 +62,10 @@ export async function onRequestPatch(context) {
     UPDATE eventos SET
       nome = COALESCE(${body.nome}, nome),
       data_evento = COALESCE(${body.data_evento}, data_evento),
-      local = COALESCE(${body.local}, local)
+      local = COALESCE(${body.local}, local),
+      limite_vagas = ${body.limite_vagas ?? null}
     WHERE id = ${id} AND campeonato_id = ${campeonato.id}
-    RETURNING id, nome, data_evento, local, tipo
+    RETURNING id, nome, data_evento, local, tipo, limite_vagas
   `;
   if (!evento) return Response.json({ erro: 'Evento não encontrado' }, { status: 404 });
 

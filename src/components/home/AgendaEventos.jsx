@@ -48,6 +48,9 @@ export default function AgendaEventos({ ultimoPassado, proximoFuturo }) {
               <p className="text-sm text-asfalto-600">
                 {formatarData(proximoFuturo.data_evento)}
                 {proximoFuturo.local ? ` · ${proximoFuturo.local}` : ''}
+                {proximoFuturo.limite_vagas != null
+                  ? ` · ${proximoFuturo.limite_vagas} vaga${proximoFuturo.limite_vagas !== 1 ? 's' : ''}`
+                  : ''}
               </p>
             </div>
           </div>

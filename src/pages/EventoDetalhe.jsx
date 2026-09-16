@@ -107,6 +107,10 @@ export default function EventoDetalhe() {
     );
   }
 
+  const vagasRestantes =
+    evento.limite_vagas != null ? Math.max(0, evento.limite_vagas - evento.confirmados.length) : null;
+  const lotado = vagasRestantes === 0;
+
   return (
     <main className="max-w-md mx-auto px-4 py-10 space-y-6">
       <Link to={rota('/')} className="flex items-center gap-1.5 text-sm text-asfalto-600 hover:text-checkered w-fit">
@@ -126,9 +130,29 @@ export default function EventoDetalhe() {
 
       {/* Lista de confirmados */}
       <div>
-        <h2 className="font-display font-semibold text-checkered text-sm mb-2">
-          {evento.confirmados.length} confirmado{evento.confirmados.length !== 1 ? 's' : ''}
-        </h2>
+        <div className="flex items-baseline justify-between gap-2 mb-2">
+          <h2 className="font-display font-semibold text-checkered text-sm">
+            {evento.confirmados.length} confirmado{evento.confirmados.length !== 1 ? 's' : ''}
+          </h2>
+          {evento.limite_vagas != null && (
+            <span className={`text-xs font-display ${vagasRestantes === 0 ? 'text-racing' : 'text-asfalto-600'}`}>
+              {vagasRestantes === 0
+                ? 'Vagas esgotadas'
+                : `${vagasRestantes} vaga${vagasRestantes !== 1 ? 's' : ''} restante${vagasRestantes !== 1 ? 's' : ''}`}
+              <span className="text-asfalto-600"> · {evento.confirmados.length}/{evento.limite_vagas}</span>
+            </span>
+          )}
+        </div>
+
+        {evento.limite_vagas != null && (
+          <div className="h-1.5 bg-asfalto-800 rounded-full overflow-hidden mb-3">
+            <div
+              className={vagasRestantes === 0 ? 'h-full bg-racing' : 'h-full bg-checkered/40'}
+              style={{ width: `${Math.min(100, (evento.confirmados.length / evento.limite_vagas) * 100)}%` }}
+            />
+          </div>
+        )}
+
         {evento.confirmados.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {evento.confirmados.map((c) => (
@@ -155,6 +179,16 @@ export default function EventoDetalhe() {
           <div className="flex items-center gap-2 text-checkered bg-racing/10 border border-racing/40 rounded-lg px-4 py-3">
             <CheckCircle2 className="w-5 h-5 text-racing shrink-0" />
             <span className="text-sm">Presença confirmada!</span>
+          </div>
+        ) : lotado ? (
+          <div className="flex items-start gap-2 text-checkered bg-asfalto-800 border border-asfalto-700 rounded-lg px-4 py-3">
+            <AlertTriangle className="w-5 h-5 text-racing shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p>Todas as {evento.limite_vagas} vagas dessa corrida já foram preenchidas.</p>
+              <p className="text-asfalto-600 text-xs mt-1">
+                Fala com quem organiza — pode ser que abra vaga ou que role outra bateria.
+              </p>
+            </div>
           </div>
         ) : (
           <form onSubmit={confirmar} className="space-y-3">

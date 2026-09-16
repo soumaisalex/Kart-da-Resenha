@@ -9,7 +9,7 @@ import { useCampeonato } from '../../context/CampeonatoContext.jsx';
 export default function GestaoEventos() {
   const { apiUrl } = useCampeonato();
   const [eventos, setEventos] = useState(null);
-  const [form, setForm] = useState({ nome: '', data_evento: '', local: '' });
+  const [form, setForm] = useState({ nome: '', data_evento: '', local: '', limite_vagas: '' });
   const [criando, setCriando] = useState(false);
   const [erro, setErro] = useState(null);
   const [expandido, setExpandido] = useState(null);
@@ -39,11 +39,11 @@ export default function GestaoEventos() {
       const resp = await fetch(apiUrl('/eventos'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, limite_vagas: form.limite_vagas ? Number(form.limite_vagas) : null })
       });
       const dados = await resp.json();
       if (!resp.ok) throw new Error(dados.erro || 'Não foi possível criar o evento');
-      setForm({ nome: '', data_evento: '', local: '' });
+      setForm({ nome: '', data_evento: '', local: '', limite_vagas: '' });
       carregar();
     } catch (e) {
       setErro(e.message);
@@ -96,14 +96,15 @@ export default function GestaoEventos() {
           Pilotos poderão confirmar presença assim que você criar aqui.
         </p>
 
-        <form onSubmit={criarEvento} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <form onSubmit={criarEvento} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
           <Campo label="Nome (opcional)" valor={form.nome} onChange={(v) => setForm({ ...form, nome: v })} />
           <Campo label="Data" tipo="date" valor={form.data_evento} onChange={(v) => setForm({ ...form, data_evento: v })} obrigatorio />
           <Campo label="Local" valor={form.local} onChange={(v) => setForm({ ...form, local: v })} />
+          <Campo label="Vagas (opcional)" tipo="number" valor={form.limite_vagas} onChange={(v) => setForm({ ...form, limite_vagas: v })} />
           <button
             type="submit"
             disabled={criando}
-            className="sm:col-span-3 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-racing
+            className="sm:col-span-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-racing
                        hover:bg-racing-dark text-checkered font-display font-semibold w-fit disabled:opacity-60"
           >
             {criando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -210,6 +211,12 @@ function EventoLinha({ evento, expandido, detalhe, excluindo, onToggle, onEditar
                 <div>
                   <p className="text-xs uppercase tracking-wide text-asfalto-600 mb-2">
                     {detalhe.confirmados.length} confirmado{detalhe.confirmados.length !== 1 ? 's' : ''}
+                    {evento.limite_vagas != null && (
+                      <span className={detalhe.confirmados.length >= evento.limite_vagas ? 'text-racing' : ''}>
+                        {' '}de {evento.limite_vagas} vaga{evento.limite_vagas !== 1 ? 's' : ''}
+                        {detalhe.confirmados.length >= evento.limite_vagas ? ' · lotado' : ''}
+                      </span>
+                    )}
                   </p>
                   {detalhe.confirmados.length === 0 ? (
                     <p className="text-xs text-asfalto-600">Ninguém confirmou ainda.</p>
