@@ -60,7 +60,7 @@ export default function PerfilPiloto() {
         <div className="bg-asfalto-800 border border-asfalto-700 rounded-lg px-4 py-2.5 text-sm text-asfalto-600 flex items-center gap-2">
           <Clock className="w-4 h-4 shrink-0" />
           {piloto.status === 'pendente'
-            ? 'Perfil aguardando aprovação — só você consegue ver essa página por enquanto.'
+            ? 'Perfil aguardando aprovação — o histórico de corridas já aparece normalmente, mas a confirmação de presença em novas corridas só libera depois que for aprovado.'
             : 'Este perfil não foi aprovado.'}
         </div>
       )}

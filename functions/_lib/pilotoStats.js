@@ -31,7 +31,7 @@ export async function obterEstatisticasPiloto(sql, campeonatoId, pilotoId) {
              COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados r ON r.piloto_id = p.id
-      WHERE p.status = 'aprovado' AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
+      WHERE p.status IN ('aprovado', 'pendente') AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
       GROUP BY p.id
       UNION ALL
       SELECT NULL::int AS piloto_id, TRIM(r.nome_bruto) AS nome_bruto,
@@ -63,7 +63,7 @@ export async function obterEstatisticasPiloto(sql, campeonatoId, pilotoId) {
              COALESCE(SUM(rt.pontos_posicao + rt.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados_temporada rt ON rt.piloto_id = p.id
-      WHERE p.status = 'aprovado' AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
+      WHERE p.status IN ('aprovado', 'pendente') AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
       GROUP BY p.id
       UNION ALL
       SELECT NULL::int AS piloto_id, TRIM(rt.nome_bruto) AS nome_bruto,
@@ -138,7 +138,7 @@ export async function obterEstatisticasNaoVinculado(sql, campeonatoId, nomeBruto
              COALESCE(SUM(r.pontos_posicao + r.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados r ON r.piloto_id = p.id
-      WHERE p.status = 'aprovado' AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
+      WHERE p.status IN ('aprovado', 'pendente') AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
       GROUP BY p.id
       UNION ALL
       SELECT NULL::int AS piloto_id, TRIM(r.nome_bruto) AS nome_bruto,
@@ -170,7 +170,7 @@ export async function obterEstatisticasNaoVinculado(sql, campeonatoId, nomeBruto
              COALESCE(SUM(rt.pontos_posicao + rt.pontos_volta_rapida), 0) AS pontos
       FROM pilotos p
       LEFT JOIN resultados_temporada rt ON rt.piloto_id = p.id
-      WHERE p.status = 'aprovado' AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
+      WHERE p.status IN ('aprovado', 'pendente') AND p.oculto = false AND p.campeonato_id = ${campeonatoId}
       GROUP BY p.id
       UNION ALL
       SELECT NULL::int AS piloto_id, TRIM(rt.nome_bruto) AS nome_bruto,
